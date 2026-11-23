@@ -12,6 +12,8 @@
 **Операционная система в браузере.** BIOS, вход, рабочий стол, оконный менеджер,
 терминал, архив, журнал, змей, генератор synthwave и сигнал на 47.2 Гц.
 
+**Live:** https://yakutc.github.io/matrixx-os/ · **Repo:** https://github.com/Yakutc/matrixx-os
+
 Это не лендинг и не один статичный HTML: Vite + React + TypeScript, собственный
 оконный менеджер, Web Audio, Canvas и полноценная сборка для GitHub Pages.
 
