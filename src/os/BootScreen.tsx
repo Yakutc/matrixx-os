@@ -1,25 +1,21 @@
 import { useEffect, useState } from 'react'
 import { useOS } from './OSProvider'
 
-type BootLine = { text: string; tone?: 'dim' | 'warn' | 'ok' }
-
-const LINES: BootLine[] = [
-  { text: 'MATRIXX BIOS v0.9.7 // НИИ-9, СЕКТОР 4', tone: 'dim' },
-  { text: 'CPU ...................... 47.2 MHz', tone: 'ok' },
-  { text: 'MEM ...................... 640 KB', tone: 'ok' },
-  { text: 'CRT ...................... 60 Hz', tone: 'ok' },
-  { text: 'СЕТЬ ..................... ЛОКАЛЬНАЯ', tone: 'ok' },
-  { text: 'ОБЪЕКТ 09 ................ НЕТ ОТВЕТА', tone: 'warn' },
-  { text: 'ПИТАНИЕ: НЕ ОТКЛЮЧАТЬ', tone: 'warn' },
-  { text: 'ЗАГРУЗКА КОНТУРА ......... 100%', tone: 'ok' },
-  { text: 'СИГНАЛ 47.2 Гц ........... ОЖИДАНИЕ', tone: 'warn' },
-  { text: 'ДОБРО ПОЖАЛОВАТЬ, ОПЕРАТОР.', tone: 'dim' },
+const SYSTEMD_LINES = [
+  { time: '0.000', text: 'Matrixx Linux 24.04 LTS (GNU/Linux 6.8.0-matrixx x86_64)', tone: 'dim' },
+  { time: '0.214', text: 'Loaded Linux Kernel 6.8.0-matrixx', tone: 'dim' },
+  { time: '0.418', text: 'Mounted /home', tone: 'ok' },
+  { time: '0.532', text: 'Started Network Manager', tone: 'ok' },
+  { time: '0.744', text: 'Started D-Bus System Message Bus', tone: 'ok' },
+  { time: '0.902', text: 'Reached target Local File Systems', tone: 'ok' },
+  { time: '1.104', text: 'Started GNOME Display Manager', tone: 'ok' },
+  { time: '1.238', text: 'Reached target Graphical Interface', tone: 'ok' },
+  { time: '1.240', text: 'Matrixx Linux 24.04 LTS — tty1', tone: 'warn' },
 ]
 
 export function BootScreen({ onDone }: { onDone: () => void }) {
   const { settings } = useOS()
-  const [visible, setVisible] = useState(0)
-  const [stage, setStage] = useState<'typing' | 'logo'>('typing')
+  const [stage, setStage] = useState<'grub' | 'systemd'>('grub')
   const reduce =
     settings.reduceMotion ||
     (typeof window !== 'undefined' &&
@@ -27,97 +23,96 @@ export function BootScreen({ onDone }: { onDone: () => void }) {
 
   useEffect(() => {
     if (reduce) {
-      setVisible(LINES.length)
-      setStage('logo')
-      return
-    }
-    if (visible >= LINES.length) {
-      const timer = window.setTimeout(() => setStage('logo'), 420)
+      setStage('systemd')
+      const timer = window.setTimeout(onDone, 600)
       return () => window.clearTimeout(timer)
     }
     const timer = window.setTimeout(
-      () => setVisible((current) => Math.min(current + 1, LINES.length)),
-      170,
+      () => {
+        if (stage === 'grub') setStage('systemd')
+        else onDone()
+      },
+      stage === 'grub' ? 1600 : 1900,
     )
     return () => window.clearTimeout(timer)
-  }, [visible, reduce])
-
-  const advance = () => {
-    if (stage === 'typing') {
-      setVisible(LINES.length)
-      setStage('logo')
-      return
-    }
-    onDone()
-  }
+  }, [stage, reduce, onDone])
 
   useEffect(() => {
+    const advance = () => {
+      if (stage === 'grub') setStage('systemd')
+      else onDone()
+    }
     const onKey = (event: KeyboardEvent) => {
-      event.preventDefault()
-      if (stage === 'typing') {
-        setVisible(LINES.length)
-        setStage('logo')
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        onDone()
         return
       }
-      onDone()
+      advance()
     }
+    const onPointer = () => advance()
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    window.addEventListener('pointerdown', onPointer)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('pointerdown', onPointer)
+    }
   }, [stage, onDone])
 
+  if (stage === 'grub') {
+    return (
+      <div className="boot" role="presentation">
+        <div className="grub">
+          <div className="grub__frame">
+            <div className="grub__title">GNU GRUB version 2.12</div>
+            <div className="grub__sub">
+              Matrixx Linux 24.04 LTS — recovery image
+            </div>
+            <div className="grub__entry is-selected">
+              <span>›</span>
+              Matrixx Linux 24.04 LTS
+            </div>
+            <div className="grub__entry">
+              <span>›</span>
+              Advanced options for Matrixx Linux
+            </div>
+            <div className="grub__entry">
+              <span>›</span>
+              Memory test (memtest86+)
+            </div>
+            <div className="grub__hint">
+              Use the ↑ and ↓ keys to select which entry is highlighted.
+              <br />
+              Press enter to boot the selected OS.
+              <br />
+              <span className="grub__timer">Booting Matrixx Linux in 3 seconds…</span>
+            </div>
+          </div>
+        </div>
+        <div className="boot__skip">Click or press any key to continue</div>
+      </div>
+    )
+  }
+
   return (
-    <div className="boot" onPointerDown={advance} role="presentation">
-      <div className="boot__inner">
-        <div className="boot__top">
-          <span>MATRIXX // RECOVERY CONSOLE</span>
-          <span>СЕКТОР 4 · ТЕРМИНАЛ 04</span>
-          <span>04.11.1997</span>
-        </div>
-
-        <div className="boot__lines" aria-live="polite">
-          {LINES.slice(0, visible).map((line, index) => (
-            <div
-              key={`${index}-${line.text}`}
-              className={`boot__line ${
-                line.tone === 'ok'
-                  ? 'boot__line--ok'
-                  : line.tone === 'warn'
-                    ? 'boot__line--warn'
-                    : line.tone === 'dim'
-                      ? 'boot__line--dim'
-                      : ''
-              }`}
-            >
-              <span>{line.text}</span>
-            </div>
-          ))}
-        </div>
-
-        <div className="boot__center">
-          {stage === 'logo' && (
-            <div className="boot__logo-stage">
-              <div className="boot__logo" data-text="MATRIXX">
-                MATRIXX
-              </div>
-              <div className="boot__sub">
-                OS 0.9.7 <b>{'//'}</b> RECOVERY BUILD
-              </div>
-              <div className="boot__press">НАЖМИТЕ ЛЮБУЮ КЛАВИШУ</div>
-            </div>
-          )}
-        </div>
-
-        <div className="boot__foot">
-          <div>
-            <div>BUILD 0.9.7 · AMD 47.2</div>
-            <div>MEM 640K OK · 1 DISK</div>
+    <div className="boot" role="presentation">
+      <div className="systemd">
+        {SYSTEMD_LINES.map((line) => (
+          <div className="systemd__line" key={`${line.time}-${line.text}`}>
+            <span className="systemd__dim">[{line.time}] </span>
+            <span className={line.tone === 'ok' ? 'systemd__ok' : line.tone === 'warn' ? 'systemd__warn' : 'systemd__dim'}>
+              {line.tone === 'ok' ? '[  OK  ] ' : ''}
+            </span>
+            {line.text}
           </div>
-          <div className="boot__progress" aria-hidden="true">
-            <span style={{ width: `${(visible / LINES.length) * 100}%` }} />
-          </div>
-          <div>НЕ ОТКЛЮЧАТЬ ПИТАНИЕ</div>
+        ))}
+        <div className="systemd__line">
+          <span className="systemd__dim">[  OK  ] </span>
+          Started User Manager for UID 1000
+          <span className="boot__cursor" />
         </div>
       </div>
+      <div className="boot__skip">Click or press any key to skip</div>
     </div>
   )
 }

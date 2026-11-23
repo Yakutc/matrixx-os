@@ -1,7 +1,6 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { AppView } from './AppView'
-import { APP_META } from './apps'
-import { Icon } from './icons'
+import { AppIcon, Icon } from './icons'
 import { useOS } from './OSProvider'
 import type { Rect, WindowState } from './types'
 import { clampRect, workspaceBounds } from './wm'
@@ -30,7 +29,6 @@ export function WindowFrame({ win }: { win: WindowState }) {
   } | null>(null)
   const active = activeId === win.id && !win.minimized
   const rect = draft ?? win.rect
-  const meta = APP_META[win.appId]
 
   const startDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.button !== 0) return
@@ -173,17 +171,15 @@ export function WindowFrame({ win }: { win: WindowState }) {
           toggleMaximize(win.id)
         }}
       >
-        <span className="win__index">{meta.index}</span>
-        <span className="win__led" />
+        <AppIcon appId={win.appId} className="win__icon" />
         <span className="win__title">{win.title}</span>
         <span className="win__spacer" />
-        <span className="win__meta">NII-9/04</span>
         <div className="win__controls">
           <button
             type="button"
             className="win__ctl"
-            aria-label="Свернуть окно"
-            title="Свернуть"
+            aria-label="Minimize window"
+            title="Minimize"
             onClick={() => minimizeWindow(win.id)}
           >
             <Icon name="min" size={14} />
@@ -191,20 +187,20 @@ export function WindowFrame({ win }: { win: WindowState }) {
           <button
             type="button"
             className="win__ctl"
-            aria-label={win.maximized ? 'Восстановить окно' : 'Развернуть окно'}
-            title={win.maximized ? 'Восстановить' : 'Развернуть'}
+            aria-label={win.maximized ? 'Restore window' : 'Maximize window'}
+            title={win.maximized ? 'Restore' : 'Maximize'}
             onClick={() => toggleMaximize(win.id)}
           >
-            <Icon name={win.maximized ? 'restore' : 'max'} size={13} />
+            <Icon name={win.maximized ? 'restore' : 'max'} size={12} />
           </button>
           <button
             type="button"
             className="win__ctl win__ctl--close"
-            aria-label="Закрыть окно"
-            title="Закрыть"
+            aria-label="Close window"
+            title="Close"
             onClick={() => closeWindow(win.id)}
           >
-            <Icon name="close" size={13} />
+            <Icon name="close" size={12} />
           </button>
         </div>
       </div>

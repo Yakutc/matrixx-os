@@ -14,10 +14,10 @@ import type {
   OpenOptions,
   OSApi,
   Phase,
+  Rect,
   Settings,
   Toast,
   ToastTone,
-  Rect,
   WindowState,
 } from './types'
 import { APP_META, createDefaultRect, isAppId } from './apps'
@@ -67,7 +67,7 @@ export function OSProvider({ children }: { children: ReactNode }) {
 
   const notify = useCallback((text: string, tone: ToastTone = 'info') => {
     const id = ++toastRef.current
-    setToasts((current) => [...current.slice(-3), { id, text, tone }])
+    setToasts((current) => [...current.slice(-2), { id, text, tone }])
     window.setTimeout(() => {
       setToasts((current) => current.filter((toast) => toast.id !== id))
     }, 4200)
@@ -109,31 +109,22 @@ export function OSProvider({ children }: { children: ReactNode }) {
         payload: options.payload,
       }
       dispatch({ type: 'open', window: win, singleton })
-      playSound('open')
       return id
     },
-    [playSound, state.windows],
+    [state.windows],
   )
 
-  const closeWindow = useCallback(
-    (id: string) => {
-      dispatch({ type: 'close', id })
-      playSound('close')
-    },
-    [playSound],
-  )
+  const closeWindow = useCallback((id: string) => {
+    dispatch({ type: 'close', id })
+  }, [])
 
   const focusWindow = useCallback((id: string) => {
     dispatch({ type: 'focus', id })
   }, [])
 
-  const minimizeWindow = useCallback(
-    (id: string) => {
-      dispatch({ type: 'minimize', id })
-      playSound('click')
-    },
-    [playSound],
-  )
+  const minimizeWindow = useCallback((id: string) => {
+    dispatch({ type: 'minimize', id })
+  }, [])
 
   const toggleMaximize = useCallback((id: string) => {
     dispatch({
@@ -151,8 +142,6 @@ export function OSProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
-  const bootDone = useCallback(() => setPhase('login'), [])
-
   const login = useCallback(() => {
     setPhase('desktop')
     playSound('chime')
@@ -160,44 +149,36 @@ export function OSProvider({ children }: { children: ReactNode }) {
       autoOpened.current = true
       const coarse = window.matchMedia('(pointer: coarse)').matches
       if (coarse) {
-        notify('СИСТЕМА ЗАГРУЖЕНА. ВЫБЕРИТЕ МОДУЛЬ.', 'ok')
+        notify('Welcome to Matrixx Linux 24.04 LTS', 'ok')
         return
       }
-      const wide = window.innerWidth >= 1100
+      const wide = window.innerWidth >= 1200
       openWindow(
         'terminal',
         wide
           ? {
               rect: {
-                x: window.innerWidth - 820,
-                y: window.innerHeight - 548,
-                w: 780,
-                h: 480,
+                x: window.innerWidth - 940,
+                y: 20,
+                w: 900,
+                h: 560,
               },
             }
           : undefined,
       )
-      notify('СИСТЕМА ЗАГРУЖЕНА. ТЕРМИНАЛ 04 В СЕТИ.', 'ok')
+      notify('Welcome to Matrixx Linux 24.04 LTS', 'ok')
     }
   }, [notify, openWindow, playSound, state.windows.length])
 
   const lock = useCallback(() => setPhase('lock'), [])
-  const unlock = useCallback(() => {
-    setPhase('desktop')
-    playSound('click')
-  }, [playSound])
+  const unlock = useCallback(() => setPhase('desktop'), [])
   const reboot = useCallback(() => {
     setPhase(loadSettings().skipBoot ? 'login' : 'boot')
-    playSound('close')
-  }, [playSound])
-  const shutdown = useCallback(() => {
-    setPhase('off')
-    playSound('close')
-  }, [playSound])
+  }, [])
+  const shutdown = useCallback(() => setPhase('off'), [])
   const powerOn = useCallback(() => {
     setPhase(loadSettings().skipBoot ? 'login' : 'boot')
-    playSound('open')
-  }, [playSound])
+  }, [])
 
   const resetSystem = useCallback(() => {
     clearSystemStorage()
@@ -213,13 +194,13 @@ export function OSProvider({ children }: { children: ReactNode }) {
     const root = document.documentElement
     root.dataset.theme = settings.theme
     root.dataset.wallpaper = settings.wallpaper
-    root.dataset.crt = settings.crt ? 'on' : 'off'
     root.dataset.reduceMotion = settings.reduceMotion ? 'on' : 'off'
+    root.dataset.nightLight = settings.nightLight ? 'on' : 'off'
     const meta = document.querySelector('meta[name="theme-color"]')
     const colors: Record<Settings['theme'], string> = {
-      phosphor: '#050806',
-      amber: '#080604',
-      bone: '#e8e2d2',
+      dark: '#1e1e1e',
+      light: '#f2f2f2',
+      hc: '#000000',
     }
     meta?.setAttribute('content', colors[settings.theme])
   }, [settings])
@@ -242,20 +223,6 @@ export function OSProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('resize', onResize)
   }, [])
 
-  useEffect(() => {
-    if (!settings.sound) return
-    const onClick = (event: PointerEvent) => {
-      const target = event.target
-      if (!(target instanceof Element)) return
-      if (target.closest('[data-silent="true"]')) return
-      if (target.closest('button, [role="menuitem"], [role="option"], .icon-tile, .start-item')) {
-        playUiSound('click', settings.volume)
-      }
-    }
-    document.addEventListener('pointerdown', onClick)
-    return () => document.removeEventListener('pointerdown', onClick)
-  }, [settings.sound, settings.volume])
-
   const value = useMemo<OSApi>(
     () => ({
       settings,
@@ -270,7 +237,7 @@ export function OSProvider({ children }: { children: ReactNode }) {
       toggleMaximize,
       moveWindow,
       phase,
-      bootDone,
+      bootDone: () => setPhase('login'),
       login,
       lock,
       unlock,
@@ -296,7 +263,6 @@ export function OSProvider({ children }: { children: ReactNode }) {
       toggleMaximize,
       moveWindow,
       phase,
-      bootDone,
       login,
       lock,
       unlock,

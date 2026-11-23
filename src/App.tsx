@@ -22,10 +22,10 @@ class Boundary extends Component<{ children: ReactNode }, BoundaryState> {
       return (
         <div className="error-screen">
           <div>
-            <h1>СИСТЕМА ДАЛА СБОЙ</h1>
-            <p>КОНТУР ВОССТАНОВЛЕНИЯ ДОСТУПЕН. ПЕРЕЗАГРУЗИТЕ ТЕРМИНАЛ.</p>
+            <h1>Something went wrong</h1>
+            <p>The desktop session hit an unexpected error. Restart the session to continue.</p>
             <button type="button" onClick={() => window.location.reload()}>
-              ПЕРЕЗАГРУЗИТЬ
+              Restart Session
             </button>
           </div>
         </div>

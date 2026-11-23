@@ -1,20 +1,5 @@
 import { useEffect, useState } from 'react'
 
-const MONTHS = [
-  'ЯНВ',
-  'ФЕВ',
-  'МАР',
-  'АПР',
-  'МАЙ',
-  'ИЮН',
-  'ИЮЛ',
-  'АВГ',
-  'СЕН',
-  'ОКТ',
-  'НОЯ',
-  'ДЕК',
-]
-
 export function useClock(): Date {
   const [now, setNow] = useState(() => new Date())
   useEffect(() => {
@@ -33,13 +18,17 @@ export function timeParts(now: Date): { hours: string; minutes: string; seconds:
 }
 
 export function shortDate(now: Date): string {
-  return `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`
+  return now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
 export function longDate(now: Date): string {
-  return `${String(now.getDate()).padStart(2, '0')} ${MONTHS[now.getMonth()]} ${now.getFullYear()}`
+  return now.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  })
 }
 
 export function weekday(now: Date): string {
-  return now.toLocaleDateString('ru-RU', { weekday: 'long' }).toUpperCase()
+  return now.toLocaleDateString('en-US', { weekday: 'short' })
 }

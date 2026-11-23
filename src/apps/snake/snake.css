@@ -3,50 +3,46 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background: var(--panel);
+  background: var(--surface);
+  font-family: var(--font-ui);
 }
 
 .snake__head {
   display: grid;
   grid-template-columns: repeat(3, auto) 1fr;
   align-items: stretch;
-  border-bottom: 1px solid var(--line);
-  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
 }
 
 .snake__metric {
   display: flex;
   flex-direction: column;
   gap: 1px;
-  min-width: 70px;
-  padding: 7px 12px;
-  border-right: 1px solid var(--line);
+  min-width: 78px;
+  padding: 8px 14px;
+  border-right: 1px solid var(--border);
 }
 
 .snake__metric span {
   color: var(--text-muted);
-  font-size: 8.5px;
-  letter-spacing: 0.12em;
+  font-size: 11px;
 }
 
 .snake__metric b {
   color: var(--text);
-  font-family: var(--font-display);
-  font-size: 24px;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  line-height: 0.9;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.1;
 }
 
 .snake__status {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 7px;
-  padding: 0 12px;
+  gap: 8px;
+  padding: 0 14px;
   color: var(--text-muted);
-  font-size: 9px;
-  letter-spacing: 0.09em;
+  font-size: 12px;
   text-align: right;
 }
 
@@ -56,9 +52,9 @@
   place-items: center;
   flex: 1;
   min-height: 0;
-  padding: 12px;
+  padding: 14px;
   overflow: hidden;
-  background: var(--bg);
+  background: var(--surface-sunken);
 }
 
 .snake__canvas {
@@ -66,72 +62,51 @@
   width: 100%;
   max-width: 100%;
   max-height: 100%;
-  border: 1px solid var(--line-strong);
-  image-rendering: pixelated;
-}
-
-.snake__scan {
-  position: absolute;
-  inset: 12px;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.16) 0,
-    rgba(0, 0, 0, 0.16) 1px,
-    transparent 1px,
-    transparent 3px
-  );
-  opacity: 0.6;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-sunken);
 }
 
 .snake__overlay {
   position: absolute;
-  inset: 12px;
+  inset: 14px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 20px;
-  background: color-mix(in srgb, var(--bg) 84%, transparent);
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
   text-align: center;
 }
 
-[data-theme='bone'] .snake__overlay {
-  background: color-mix(in srgb, var(--bg) 90%, transparent);
-}
-
 .snake__brand {
-  color: var(--accent);
-  font-family: var(--font-display);
-  font-size: clamp(38px, 9vw, 62px);
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  line-height: 0.8;
-  text-transform: uppercase;
+  color: var(--text);
+  font-size: clamp(34px, 6vw, 48px);
+  font-weight: 700;
+  line-height: 1;
 }
 
 .snake__brand--danger {
-  color: var(--danger);
+  color: var(--red);
 }
 
 .snake__sub {
-  color: var(--text-dim);
-  font-size: 8px;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
+  color: var(--text-muted);
+  font-size: 12px;
 }
 
 .snake__text {
-  max-width: 320px;
-  color: var(--text-muted);
-  font-family: var(--font-text);
-  font-size: 12px;
-  line-height: 1.5;
+  max-width: 340px;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.55;
 }
 
 .snake__start {
-  height: 32px;
+  height: 34px;
   margin-top: 4px;
 }
 
@@ -139,14 +114,13 @@
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  flex: 0 0 26px;
+  flex: 0 0 30px;
   align-items: center;
-  padding: 0 12px;
-  border-top: 1px solid var(--line);
-  background: var(--bg-2);
+  padding: 0 14px;
+  border-top: 1px solid var(--border);
+  background: var(--headerbar);
   color: var(--text-muted);
-  font-size: 8.5px;
-  letter-spacing: 0.08em;
+  font-size: 11px;
 }
 
 @media (max-width: 720px) {
@@ -160,23 +134,19 @@
 
   .snake__metric {
     min-width: 0;
-    padding: 6px 9px;
+    padding: 6px 10px;
   }
 
   .snake__stage {
     padding: 8px;
   }
 
-  .snake__scan,
   .snake__overlay {
     inset: 8px;
+    padding: 14px;
   }
 
   .snake__foot span:nth-child(2) {
     display: none;
-  }
-
-  .snake__text {
-    font-size: 11px;
   }
 }

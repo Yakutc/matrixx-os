@@ -13,8 +13,8 @@ export interface FmPreset {
 export const PRESETS: Record<FmPresetId, FmPreset> = {
   night: {
     id: 'night',
-    title: 'НЕОН 47.2',
-    subtitle: 'НОЧНОЙ КОНТУР / A-MOLL',
+    title: 'Night Drive',
+    subtitle: 'NOCTURNE / A MINOR',
     bpm: 92,
     chords: [
       [57, 60, 64],
@@ -27,8 +27,8 @@ export const PRESETS: Record<FmPresetId, FmPreset> = {
   },
   chase: {
     id: 'chase',
-    title: 'ПОГОНЯ',
-    subtitle: 'СЕКТОР 4 / D-MOLL',
+    title: 'Chase',
+    subtitle: 'SECTOR 4 / D MINOR',
     bpm: 112,
     chords: [
       [50, 53, 57],
@@ -41,8 +41,8 @@ export const PRESETS: Record<FmPresetId, FmPreset> = {
   },
   signal: {
     id: 'signal',
-    title: 'СИГНАЛ',
-    subtitle: '47.2 Гц / E-MOLL',
+    title: 'Signal',
+    subtitle: '47.2 HZ / E MINOR',
     bpm: 78,
     chords: [
       [52, 55, 59, 62],

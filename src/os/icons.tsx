@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import type { AppId } from './types'
 
 export type IconName =
@@ -28,6 +28,12 @@ export type IconName =
   | 'wave'
   | 'signal'
   | 'eye'
+  | 'grid'
+  | 'wifi'
+  | 'bluetooth'
+  | 'moon'
+  | 'home'
+  | 'user'
 
 const paths: Record<IconName, ReactNode> = {
   terminal: (
@@ -189,6 +195,42 @@ const paths: Record<IconName, ReactNode> = {
       <circle cx="12" cy="12" r="2.5" />
     </>
   ),
+  grid: (
+    <>
+      <rect x="4" y="4" width="4" height="4" rx="1" />
+      <rect x="10" y="4" width="4" height="4" rx="1" />
+      <rect x="16" y="4" width="4" height="4" rx="1" />
+      <rect x="4" y="10" width="4" height="4" rx="1" />
+      <rect x="10" y="10" width="4" height="4" rx="1" />
+      <rect x="16" y="10" width="4" height="4" rx="1" />
+      <rect x="4" y="16" width="4" height="4" rx="1" />
+      <rect x="10" y="16" width="4" height="4" rx="1" />
+      <rect x="16" y="16" width="4" height="4" rx="1" />
+    </>
+  ),
+  wifi: (
+    <>
+      <path d="M3 9a13 13 0 0 1 18 0" />
+      <path d="M6.5 12.5a8 8 0 0 1 11 0" />
+      <path d="M9.5 16a4 4 0 0 1 5 0" />
+      <circle cx="12" cy="19" r="1" fill="currentColor" stroke="none" />
+    </>
+  ),
+  bluetooth: <path d="M7 7l10 10-5 4V3l5 4L7 17" />,
+  moon: <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5z" />,
+  home: (
+    <>
+      <path d="M3 11 12 3l9 8" />
+      <path d="M5 10v10h14V10" />
+      <path d="M10 20v-5h4v5" />
+    </>
+  ),
+  user: (
+    <>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21a8 8 0 0 1 16 0" />
+    </>
+  ),
 }
 
 interface IconProps {
@@ -208,12 +250,36 @@ export function Icon({ name, size = 18, className, strokeWidth = 1.5 }: IconProp
       fill="none"
       stroke="currentColor"
       strokeWidth={strokeWidth}
-      strokeLinecap="square"
-      strokeLinejoin="miter"
+      strokeLinecap="round"
+      strokeLinejoin="round"
       aria-hidden="true"
       focusable="false"
     >
       {paths[name]}
     </svg>
+  )
+}
+
+const APP_COLORS: Record<AppId, { a: string; b: string }> = {
+  terminal: { a: '#5c2d4d', b: '#210019' },
+  files: { a: '#ff8a3d', b: '#c7431a' },
+  notes: { a: '#f6d32d', b: '#c99a00' },
+  settings: { a: '#6a6a6a', b: '#333333' },
+  system: { a: '#62a0ea', b: '#1c71d8' },
+  snake: { a: '#57e389', b: '#26a269' },
+  fm: { a: '#c061cb', b: '#813d9c' },
+  about: { a: '#e95420', b: '#a33915' },
+}
+
+export function AppIcon({ appId, className }: { appId: AppId; className?: string }) {
+  const color = APP_COLORS[appId]
+  return (
+    <span
+      className={`app-icon ${className ?? ''}`}
+      style={{ '--icon-a': color.a, '--icon-b': color.b } as CSSProperties}
+      aria-hidden="true"
+    >
+      <Icon name={appId} strokeWidth={1.8} />
+    </span>
   )
 }

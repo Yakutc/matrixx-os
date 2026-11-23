@@ -15,31 +15,36 @@ async function launch() {
   }
 }
 
-async function enter(page, width, height) {
+async function enter(page, width, height, screenshotLogin) {
   const x = Math.floor(width / 2)
   const y = Math.floor(height / 2)
   await page.mouse.click(x, y)
-  await page.waitForTimeout(340)
+  await page.waitForTimeout(280)
+  if (screenshotLogin) {
+    await page.waitForTimeout(160)
+    await page.screenshot({ path: `${outDir}/02-systemd.png` })
+  }
   await page.mouse.click(x, y)
-  await page.waitForSelector('.login__card', { timeout: 8000 })
-  await page.locator('.login__submit').click()
+  await page.waitForSelector('.gdm__panel', { timeout: 8000 })
+  await page.waitForTimeout(400)
+  if (screenshotLogin) await page.screenshot({ path: `${outDir}/03-login.png` })
+  await page.locator('.gdm__form input').fill('password')
+  await page.locator('.gdm__form button').click()
   await page.waitForSelector('.desktop', { timeout: 8000 })
-  await page.waitForTimeout(500)
+  await page.waitForTimeout(600)
 }
 
-async function openApp(page, name) {
-  await page.locator('.start-btn').click()
-  await page.waitForSelector('.start')
-  await page.getByRole('menuitem', { name }).click()
-  await page.waitForTimeout(500)
+async function openDock(page, title) {
+  await page.locator(`.dock__app[title="${title}"]`).click()
+  await page.waitForTimeout(450)
 }
 
-async function closeAllWindows(page) {
+async function closeAll(page) {
   let guard = 0
-  while ((await page.locator('.win').count()) > 0 && guard < 12) {
+  while ((await page.locator('.win').count()) > 0 && guard < 14) {
     guard += 1
     await page.locator('.win .win__ctl--close').last().click()
-    await page.waitForTimeout(140)
+    await page.waitForTimeout(100)
   }
 }
 
@@ -59,50 +64,80 @@ page.on('console', (message) => {
 page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`))
 
 await page.goto(base, { waitUntil: 'networkidle' })
-await page.waitForTimeout(900)
-await page.screenshot({ path: `${outDir}/01-boot.png` })
-
-await page.mouse.click(720, 420)
-await page.waitForTimeout(340)
-await page.mouse.click(720, 420)
-await page.waitForSelector('.login__card', { timeout: 8000 })
-await page.screenshot({ path: `${outDir}/02-login.png` })
-
-await page.locator('.login__submit').click()
-await page.waitForSelector('.desktop', { timeout: 8000 })
-await page.waitForTimeout(600)
-await page.screenshot({ path: `${outDir}/03-desktop.png` })
-
-await closeAllWindows(page)
-await page.waitForTimeout(300)
-await page.screenshot({ path: `${outDir}/03b-desktop-clean.png` })
-
-await page.locator('.icon-tile', { hasText: 'ТЕРМИНАЛ' }).dblclick()
-await page.waitForTimeout(450)
-await page.locator('.term__input').click()
-await page.keyboard.type('neofetch')
-await page.keyboard.press('Enter')
 await page.waitForTimeout(350)
-await page.screenshot({ path: `${outDir}/04-terminal.png` })
+await page.screenshot({ path: `${outDir}/01-grub.png` })
 
-await page.locator('.start-btn').click()
-await page.waitForSelector('.start')
-await page.screenshot({ path: `${outDir}/05-start-menu.png` })
-await page.getByRole('menuitem', { name: /MATRIXX FM/ }).click()
+await page.mouse.click(720, 420)
+await page.waitForTimeout(260)
+await page.screenshot({ path: `${outDir}/02-systemd.png` })
+await page.mouse.click(720, 420)
+await page.waitForSelector('.gdm__panel', { timeout: 8000 })
+await page.waitForTimeout(400)
+await page.screenshot({ path: `${outDir}/03-login.png` })
+
+await page.locator('.gdm__form input').fill('password')
+await page.locator('.gdm__form button').click()
+await page.waitForSelector('.desktop', { timeout: 8000 })
 await page.waitForTimeout(700)
-await page.screenshot({ path: `${outDir}/06-fm.png` })
+await page.screenshot({ path: `${outDir}/04-desktop.png` })
 
-await openApp(page, /ЗМЕЙ/)
-await page.screenshot({ path: `${outDir}/07-snake.png` })
+await closeAll(page)
+await page.waitForTimeout(250)
+await page.screenshot({ path: `${outDir}/04b-clean.png` })
 
-await openApp(page, /НАСТРОЙКИ/)
-await page.screenshot({ path: `${outDir}/08-settings.png` })
-await page.locator('.settings__theme', { hasText: 'КОСТЬ' }).click()
+await openDock(page, 'Terminal')
+await openDock(page, 'Files')
+await page.locator('.activities-btn').click()
+await page.waitForSelector('.overview')
+await page.waitForTimeout(400)
+await page.screenshot({ path: `${outDir}/05-activities.png` })
+await page.locator('.overview__pill').click()
+await page.waitForSelector('.appgrid')
+await page.waitForTimeout(350)
+await page.screenshot({ path: `${outDir}/06-appgrid.png` })
+await page.keyboard.press('Escape')
+await page.waitForTimeout(200)
+
+await page.locator('.status-btn').click()
+await page.waitForSelector('.quick')
 await page.waitForTimeout(300)
-await page.screenshot({ path: `${outDir}/08b-bone.png` })
+await page.screenshot({ path: `${outDir}/07-quick-settings.png` })
+await page.keyboard.press('Escape')
 
-await openApp(page, /АРХИВ/)
+await openDock(page, 'Terminal')
+await page.locator('.term__input').click()
+await page.keyboard.type('fastfetch')
+await page.keyboard.press('Enter')
+await page.waitForTimeout(400)
+await page.screenshot({ path: `${outDir}/08-terminal.png` })
+
+await closeAll(page)
+await openDock(page, 'Files')
+await page.locator('.files__hidden').click()
+await page.locator('.files__node', { hasText: '.protocol' }).click()
+await page.waitForTimeout(350)
 await page.screenshot({ path: `${outDir}/09-files.png` })
+
+await closeAll(page)
+await openDock(page, 'Settings')
+await page.waitForTimeout(350)
+await page.screenshot({ path: `${outDir}/10-settings.png` })
+
+await closeAll(page)
+await openDock(page, 'Music')
+await page.locator('.fm__play').click()
+await page.waitForTimeout(750)
+await page.screenshot({ path: `${outDir}/11-music.png` })
+
+await closeAll(page)
+await openDock(page, 'Snake')
+await page.waitForTimeout(350)
+await page.screenshot({ path: `${outDir}/12-snake.png` })
+
+await closeAll(page)
+await openDock(page, 'About')
+await page.waitForTimeout(350)
+await page.screenshot({ path: `${outDir}/13-about.png` })
 
 const mobile = await browser.newContext({
   viewport: { width: 390, height: 844 },
@@ -116,17 +151,25 @@ mobilePage.on('console', (message) => {
 })
 mobilePage.on('pageerror', (error) => errors.push(`mobile pageerror: ${error.message}`))
 await mobilePage.goto(base, { waitUntil: 'networkidle' })
-await mobilePage.waitForTimeout(700)
-await enter(mobilePage, 390, 844)
-await closeAllWindows(mobilePage)
-await mobilePage.waitForTimeout(300)
-await mobilePage.screenshot({ path: `${outDir}/10-mobile-desktop.png` })
-await mobilePage.locator('.start-btn').click()
-await mobilePage.waitForSelector('.start')
-await mobilePage.screenshot({ path: `${outDir}/11-mobile-menu.png` })
-await mobilePage.getByRole('menuitem', { name: /ТЕРМИНАЛ/ }).click()
+await mobilePage.waitForTimeout(350)
+await mobilePage.mouse.click(195, 420)
+await mobilePage.waitForTimeout(280)
+await mobilePage.mouse.click(195, 420)
+await mobilePage.waitForSelector('.gdm__panel', { timeout: 8000 })
+await mobilePage.locator('.gdm__form button').click()
+await mobilePage.waitForSelector('.desktop', { timeout: 8000 })
 await mobilePage.waitForTimeout(500)
-await mobilePage.screenshot({ path: `${outDir}/12-mobile-terminal.png` })
+await mobilePage.screenshot({ path: `${outDir}/14-mobile-desktop.png` })
+
+await mobilePage.locator('.activities-btn').click()
+await mobilePage.waitForSelector('.overview')
+await mobilePage.locator('.overview__pill').click()
+await mobilePage.waitForSelector('.appgrid')
+await mobilePage.waitForTimeout(300)
+await mobilePage.screenshot({ path: `${outDir}/15-mobile-appgrid.png` })
+await mobilePage.getByRole('button', { name: 'Open Terminal' }).click()
+await mobilePage.waitForTimeout(500)
+await mobilePage.screenshot({ path: `${outDir}/16-mobile-terminal.png` })
 
 const social = await browser.newContext({
   viewport: { width: 1200, height: 630 },
@@ -135,10 +178,16 @@ const social = await browser.newContext({
 const socialPage = await social.newPage()
 socialPage.on('pageerror', (error) => errors.push(`social pageerror: ${error.message}`))
 await socialPage.goto(base, { waitUntil: 'networkidle' })
-await socialPage.waitForTimeout(800)
-await enter(socialPage, 1200, 630)
-await closeAllWindows(socialPage)
-await socialPage.waitForTimeout(400)
+await socialPage.waitForTimeout(350)
+await socialPage.mouse.click(600, 300)
+await socialPage.waitForTimeout(280)
+await socialPage.mouse.click(600, 300)
+await socialPage.waitForSelector('.gdm__panel', { timeout: 8000 })
+await socialPage.locator('.gdm__form button').click()
+await socialPage.waitForSelector('.desktop', { timeout: 8000 })
+await socialPage.waitForTimeout(500)
+await closeAll(socialPage)
+await socialPage.waitForTimeout(350)
 await socialPage.screenshot({ path: `${outDir}/00-og.png` })
 await socialPage.screenshot({ path: 'public/og.png' })
 

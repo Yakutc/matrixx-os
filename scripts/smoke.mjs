@@ -14,22 +14,31 @@ async function launch() {
   }
 }
 
-async function enter(page, width) {
+async function enter(page, width, height) {
   const x = Math.floor(width / 2)
-  await page.mouse.click(x, 420)
-  await page.waitForTimeout(320)
-  await page.mouse.click(x, 420)
-  await page.waitForSelector('.login__card', { timeout: 8000 })
-  await page.locator('.login__submit').click()
+  const y = Math.floor(height / 2)
+  await page.mouse.click(x, y)
+  await page.waitForTimeout(300)
+  await page.mouse.click(x, y)
+  await page.waitForSelector('.gdm__panel', { timeout: 8000 })
+  await page.locator('.gdm__form input').fill('password')
+  await page.locator('.gdm__form button').click()
   await page.waitForSelector('.desktop', { timeout: 8000 })
+  await page.waitForTimeout(500)
+}
+
+async function openDock(page, title) {
+  await page.locator(`.dock__app[title="${title}"]`).click()
   await page.waitForTimeout(450)
 }
 
-async function openApp(page, name) {
-  await page.locator('.start-btn').click()
-  await page.waitForSelector('.start')
-  await page.getByRole('menuitem', { name }).click()
-  await page.waitForTimeout(450)
+async function closeAll(page) {
+  let guard = 0
+  while ((await page.locator('.win').count()) > 0 && guard < 12) {
+    guard += 1
+    await page.locator('.win .win__ctl--close').last().click()
+    await page.waitForTimeout(120)
+  }
 }
 
 const browser = await launch()
@@ -45,109 +54,143 @@ page.on('console', (message) => {
 page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`))
 
 await page.goto(url, { waitUntil: 'networkidle' })
-await enter(page, 1440)
-assert.equal(await page.locator('.desktop').count(), 1, 'desktop renders')
-assert.equal(await page.locator('.term__input').count(), 1, 'terminal auto-opens')
+await enter(page, 1440, 900)
 
-await page.locator('.term__input').click()
+assert.equal(await page.locator('.topbar').count(), 1, 'top bar renders')
+assert.equal(await page.locator('.dock').count(), 1, 'dock renders')
+assert.equal(await page.locator('.term__input').count(), 1, 'terminal auto-opens')
+assert.equal(
+  await page.evaluate(() => document.documentElement.dataset.theme),
+  'dark',
+  'default Yaru dark theme',
+)
+
+const terminal = page.locator('.win[data-app="terminal"]').first()
+await terminal.locator('.term__input').click()
 await page.keyboard.type('help')
 await page.keyboard.press('Enter')
 await page.waitForTimeout(250)
-const terminalText = await page.locator('.term__scroll').innerText()
-assert.match(terminalText, /ДОСТУПНЫЕ КОМАНДЫ/, 'terminal help works')
+assert.match(await terminal.locator('.term__scroll').innerText(), /Available commands/, 'terminal help')
 
-await page.keyboard.type('theme amber')
+await page.keyboard.type('theme light')
 await page.keyboard.press('Enter')
-await page.waitForTimeout(150)
+await page.waitForTimeout(200)
 assert.equal(
   await page.evaluate(() => document.documentElement.dataset.theme),
-  'amber',
+  'light',
   'theme command applies',
 )
 
+await page.keyboard.type('theme dark')
+await page.keyboard.press('Enter')
+await page.waitForTimeout(150)
+
 await page.keyboard.type('signal')
 await page.keyboard.press('Enter')
-await page.waitForTimeout(120)
-assert.match(await page.locator('.term__scroll').innerText(), /ответ получен/i, 'signal easter egg')
+await page.waitForTimeout(200)
+assert.match(await terminal.locator('.term__scroll').innerText(), /Answer received/i, 'signal easter egg')
 
-const terminalWindow = page.locator('.win[data-app="terminal"]').first()
-const before = await terminalWindow.boundingBox()
+const before = await terminal.boundingBox()
 assert.ok(before, 'terminal has a box')
-const bar = await terminalWindow.locator('.win__bar').boundingBox()
-assert.ok(bar, 'titlebar has a box')
-await page.mouse.move(bar.x + 180, bar.y + 14)
+const bar = await terminal.locator('.win__bar').boundingBox()
+assert.ok(bar, 'title bar has a box')
+await page.mouse.move(bar.x + 220, bar.y + 20)
 await page.mouse.down()
-await page.mouse.move(bar.x + 260, bar.y + 58, { steps: 8 })
+await page.mouse.move(bar.x + 290, bar.y + 64, { steps: 8 })
 await page.mouse.up()
 await page.waitForTimeout(200)
-const after = await terminalWindow.boundingBox()
-assert.ok(after && before, 'terminal still visible after drag')
-assert.ok(after.x > before.x + 20, 'window drag moves the window')
+const after = await terminal.boundingBox()
+assert.ok(after && before, 'terminal visible after drag')
+assert.ok(after.x > before.x + 20, 'window drag works')
 
-await terminalWindow.locator('.win__ctl').nth(0).click()
+await terminal.locator('.win__ctl').nth(0).click()
 await page.waitForTimeout(200)
-assert.equal(await terminalWindow.isVisible(), false, 'minimize hides the window')
-await page.locator('.task-chip', { hasText: 'ТЕРМИНАЛ' }).first().click()
-await page.waitForTimeout(200)
-assert.equal(await terminalWindow.isVisible(), true, 'taskbar restores the window')
+assert.equal(await terminal.isVisible(), false, 'minimize hides the window')
+await page.locator('.dock__app[title="Terminal"]').click()
+await page.waitForTimeout(250)
+assert.equal(await terminal.isVisible(), true, 'dock restores the window')
 
-await openApp(page, /АРХИВ/)
-assert.equal(await page.locator('.files').count(), 1, 'files app opens')
+await page.locator('.activities-btn').click()
+await page.waitForSelector('.overview')
+const windowCards = await page.locator('.window-card').count()
+assert.ok(windowCards >= 1, 'activities shows window cards')
+await page.locator('.overview__pill').click()
+await page.waitForSelector('.appgrid')
+assert.equal(await page.locator('.appgrid__item').count(), 8, 'app grid lists all applications')
+await page.keyboard.press('Escape')
+await page.waitForTimeout(150)
+
+await page.locator('.status-btn').click()
+await page.waitForSelector('.quick')
+assert.match(await page.locator('.quick').innerText(), /Wi-Fi/, 'quick settings renders')
+await page.keyboard.press('Escape')
+
+await openDock(page, 'Files')
+assert.equal(await page.locator('.files').count(), 1, 'files opens')
 await page.locator('.files__hidden').click()
-await page.locator('.files__node', { hasText: '.протокол.txt' }).click()
+await page.locator('.files__node', { hasText: '.protocol' }).click()
 await page.waitForTimeout(150)
 assert.match(
   await page.locator('.files__content').innerText(),
-  /ЕСЛИ ТЫ ЭТО ЧИТАЕШЬ/,
+  /IF YOU ARE READING THIS/,
   'hidden file opens',
 )
+await page.locator('.win[data-app="files"] .win__ctl--close').click()
 
-await openApp(page, /НАСТРОЙКИ/)
-await page.locator('.settings__theme', { hasText: 'КОСТЬ' }).click()
+await openDock(page, 'Settings')
+assert.equal(await page.locator('.settings').count(), 1, 'settings opens')
+await page.locator('.settings__theme', { hasText: 'Light' }).click()
 await page.waitForTimeout(150)
 assert.equal(
   await page.evaluate(() => document.documentElement.dataset.theme),
-  'bone',
-  'bone theme applies',
+  'light',
+  'light theme applies',
 )
-await page.locator('.settings__toggle', { hasText: 'CRT-ЭФФЕКТЫ' }).click()
+await page.locator('.settings__theme', { hasText: 'Dark' }).click()
+await page.waitForTimeout(150)
+await page.locator('.gnome-row', { hasText: 'Night Light' }).click()
 assert.equal(
-  await page.evaluate(() => document.documentElement.dataset.crt),
-  'off',
-  'CRT toggle applies',
+  await page.evaluate(() => document.documentElement.dataset.nightLight),
+  'on',
+  'night light applies',
 )
+await page.locator('.gnome-row', { hasText: 'Night Light' }).click()
+await page.locator('.win[data-app="settings"] .win__ctl--close').click()
 
-await openApp(page, /ЖУРНАЛ/)
+await openDock(page, 'Text Editor')
 await page.locator('.notes__new').click()
-await page.locator('.notes__body').fill('проверка автосохранения 47.2')
-await page.waitForTimeout(700)
+await page.locator('.notes__body').fill('autosave check 47.2')
+await page.waitForTimeout(650)
 assert.match(
   await page.evaluate(() => localStorage.getItem('matrixx.notes.v1') ?? ''),
-  /проверка автосохранения/,
-  'notes persist',
+  /autosave check 47\.2/,
+  'editor autosaves',
 )
+await page.locator('.win[data-app="notes"] .win__ctl--close').click()
 
-await openApp(page, /ЗМЕЙ/)
+await openDock(page, 'Snake')
 await page.locator('.snake__start').click()
 await page.waitForTimeout(300)
 assert.equal(await page.locator('.snake__overlay').count(), 0, 'snake starts')
 await page.keyboard.press('ArrowUp')
-await page.waitForTimeout(300)
+await page.waitForTimeout(250)
+await page.locator('.win[data-app="snake"] .win__ctl--close').click()
 
-await openApp(page, /MATRIXX FM/)
+await openDock(page, 'Music')
 await page.locator('.fm__play').click()
-await page.waitForTimeout(700)
-assert.equal(await page.locator('.fm__state').innerText(), 'ПЕРЕДАЧА', 'FM engine starts')
+await page.waitForTimeout(650)
+assert.equal(await page.locator('.fm__state').innerText(), 'Playing', 'music engine starts')
 await page.locator('.fm__play').click()
 await page.waitForTimeout(250)
-assert.equal(await page.locator('.fm__state').innerText(), 'ОЖИДАНИЕ', 'FM engine stops')
+assert.equal(await page.locator('.fm__state').innerText(), 'Stopped', 'music engine stops')
+await page.locator('.win[data-app="fm"] .win__ctl--close').click()
 
-const windowCount = await page.locator('.win').count()
-assert.ok(windowCount >= 4, 'multiple windows are open')
+const windowsBefore = await page.locator('.win').count()
+assert.ok(windowsBefore >= 1, 'a window remains before reload')
 await page.reload({ waitUntil: 'networkidle' })
-await enter(page, 1440)
+await enter(page, 1440, 900)
 const restored = await page.locator('.win').count()
-assert.ok(restored >= 3, `session restores windows (got ${restored})`)
+assert.ok(restored >= 1, `session restores windows (got ${restored})`)
 
 const mobile = await browser.newContext({
   viewport: { width: 390, height: 844 },
@@ -161,20 +204,24 @@ mobilePage.on('console', (message) => {
   if (message.type() === 'error') errors.push(`mobile console: ${message.text()}`)
 })
 await mobilePage.goto(url, { waitUntil: 'networkidle' })
-await enter(mobilePage, 390)
+await enter(mobilePage, 390, 844)
+assert.equal(await mobilePage.locator('.win').count(), 0, 'mobile starts with a clean desktop')
 const overflow = await mobilePage.evaluate(
   () => document.documentElement.scrollWidth - window.innerWidth,
 )
 assert.ok(overflow <= 1, `no horizontal overflow on mobile (overflow ${overflow})`)
-await mobilePage.locator('.start-btn').click()
-await mobilePage.waitForSelector('.start')
-const menuBox = await mobilePage.locator('.start').boundingBox()
-assert.ok(menuBox && menuBox.x >= 0 && menuBox.x + menuBox.width <= 390, 'start menu fits mobile')
-assert.ok(await mobilePage.locator('.taskbar').isVisible(), 'taskbar visible on mobile')
+assert.ok(await mobilePage.locator('.dock').isVisible(), 'dock visible on mobile')
+await mobilePage.locator('.activities-btn').click()
+await mobilePage.waitForSelector('.overview')
+await mobilePage.locator('.overview__pill').click()
+await mobilePage.waitForSelector('.appgrid')
+await mobilePage.getByRole('button', { name: 'Open Terminal' }).click()
+await mobilePage.waitForTimeout(400)
+assert.equal(await mobilePage.locator('.win[data-app="terminal"]').count(), 1, 'mobile opens terminal')
 
 await mobile.close()
 await context.close()
 await browser.close()
 
 assert.deepEqual(errors, [], `browser errors: ${errors.join(' | ')}`)
-console.log('SMOKE PASS: boot, login, WM, terminal, archive, settings, notes, snake, FM, persistence, mobile.')
+console.log('SMOKE PASS: GRUB/GDM, dock, windows, terminal, activities, quick settings, files, settings, editor, snake, music, persistence, mobile.')

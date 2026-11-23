@@ -8,8 +8,8 @@ export type AppId =
   | 'fm'
   | 'about'
 
-export type ThemeId = 'phosphor' | 'amber' | 'bone'
-export type WallpaperId = 'grid' | 'signal' | 'orbit'
+export type ThemeId = 'dark' | 'light' | 'hc'
+export type WallpaperId = 'noble' | 'minimal' | 'sunset'
 export type Phase = 'boot' | 'login' | 'desktop' | 'lock' | 'off'
 export type ToastTone = 'info' | 'ok' | 'danger'
 
@@ -23,11 +23,11 @@ export interface Rect {
 export interface Settings {
   theme: ThemeId
   wallpaper: WallpaperId
-  crt: boolean
   sound: boolean
   volume: number
   skipBoot: boolean
   reduceMotion: boolean
+  nightLight: boolean
 }
 
 export interface WindowState {

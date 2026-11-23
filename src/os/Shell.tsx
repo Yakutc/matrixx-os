@@ -1,18 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
+import { APP_ORDER } from './apps'
 import { useOS } from './OSProvider'
 import { BootScreen } from './BootScreen'
 import { LoginScreen } from './LoginScreen'
 import { LockScreen } from './LockScreen'
 import { OffScreen } from './OffScreen'
 import { Wallpaper } from './Wallpaper'
-import { ClockWidget } from './ClockWidget'
 import { DesktopIcons } from './DesktopIcons'
 import { WindowFrame } from './WindowFrame'
-import { Taskbar } from './Taskbar'
-import { StartMenu } from './StartMenu'
+import { TopBar } from './TopBar'
+import { Dock } from './Dock'
+import { Activities } from './Activities'
+import { QuickSettings } from './QuickSettings'
 import { ContextMenu } from './ContextMenu'
-import { CommandPalette } from './CommandPalette'
 import { Toasts } from './Toasts'
+import { workspaceBounds } from './wm'
+
+type Overlay = 'none' | 'activities' | 'apps' | 'quick'
 
 const KONAMI = [
   'ArrowUp',
@@ -33,38 +37,44 @@ export function Shell() {
     bootDone,
     windows,
     activeId,
+    closeWindow,
+    minimizeWindow,
+    toggleMaximize,
+    moveWindow,
+    openWindow,
     focusWindow,
-    triggerSignal,
+    settings,
     notify,
-    playSound,
+    triggerSignal,
   } = useOS()
-  const [startOpen, setStartOpen] = useState(false)
-  const [paletteOpen, setPaletteOpen] = useState(false)
+  const [overlay, setOverlay] = useState<Overlay>('none')
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
-  const [glitch, setGlitch] = useState(false)
-  const [konami, setKonami] = useState(false)
+  const [flash, setFlash] = useState(false)
   const sequence = useRef<string[]>([])
-  const glitchTimer = useRef<number | null>(null)
-  const konamiTimer = useRef<number | null>(null)
+  const flashTimer = useRef<number | null>(null)
+
+  const closeOverlays = () => {
+    setOverlay('none')
+    setContextMenu(null)
+  }
 
   useEffect(() => {
-    setStartOpen(false)
-    setPaletteOpen(false)
-    setContextMenu(null)
+    closeOverlays()
   }, [phase])
 
   useEffect(() => {
     const onSignal = () => {
-      setGlitch(true)
-      if (glitchTimer.current) window.clearTimeout(glitchTimer.current)
-      glitchTimer.current = window.setTimeout(() => setGlitch(false), 950)
+      setFlash(true)
+      notify('Unknown signal detected on 47.2 Hz', 'danger')
+      if (flashTimer.current) window.clearTimeout(flashTimer.current)
+      flashTimer.current = window.setTimeout(() => setFlash(false), 450)
     }
     window.addEventListener('matrixx:signal', onSignal)
     return () => {
       window.removeEventListener('matrixx:signal', onSignal)
-      if (glitchTimer.current) window.clearTimeout(glitchTimer.current)
+      if (flashTimer.current) window.clearTimeout(flashTimer.current)
     }
-  }, [])
+  }, [notify])
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -78,8 +88,7 @@ export function Shell() {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         if (phase === 'desktop') {
           event.preventDefault()
-          setPaletteOpen((open) => !open)
-          setStartOpen(false)
+          setOverlay((current) => (current === 'activities' ? 'none' : 'activities'))
           setContextMenu(null)
         }
         return
@@ -90,25 +99,72 @@ export function Shell() {
           setContextMenu(null)
           return
         }
-        if (paletteOpen) {
-          setPaletteOpen(false)
-          return
-        }
-        if (startOpen) {
-          setStartOpen(false)
+        if (overlay !== 'none') {
+          setOverlay('none')
           return
         }
       }
 
       if (phase !== 'desktop') return
 
-      if (event.altKey && (event.key === 'Tab' || event.code === 'Backquote')) {
+      if (event.key === 'Meta' || event.key === 'OS') {
+        if (!event.ctrlKey && !event.altKey && !event.shiftKey) {
+          event.preventDefault()
+          setOverlay((current) => (current === 'activities' ? 'none' : 'activities'))
+        }
+        return
+      }
+
+      if (event.metaKey && event.key.toLowerCase() === 'a') {
         event.preventDefault()
-        if (windows.length > 0) {
-          const ordered = [...windows].sort((a, b) => a.z - b.z)
-          const index = ordered.findIndex((win) => win.id === activeId)
-          const next = ordered[(index + 1) % ordered.length] ?? ordered[0]
-          if (next) focusWindow(next.id)
+        setOverlay('apps')
+        return
+      }
+
+      if (event.metaKey && event.key.toLowerCase() === 'd') {
+        event.preventDefault()
+        for (const win of windows) {
+          if (!win.minimized) minimizeWindow(win.id)
+        }
+        return
+      }
+
+      if (event.metaKey && /^[1-8]$/.test(event.key)) {
+        event.preventDefault()
+        const appId = APP_ORDER[Number(event.key) - 1]
+        if (appId) {
+          setOverlay('none')
+          const existing = windows.find((win) => win.appId === appId)
+          if (existing) focusWindow(existing.id)
+          else openWindow(appId)
+        }
+        return
+      }
+
+      if (event.altKey && event.key === 'F4') {
+        event.preventDefault()
+        if (activeId) closeWindow(activeId)
+        return
+      }
+
+      if (event.metaKey && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
+        const active = windows.find((win) => win.id === activeId && !win.minimized)
+        if (!active) return
+        event.preventDefault()
+        const bounds = workspaceBounds(window.innerWidth, window.innerHeight)
+        if (event.key === 'ArrowLeft') {
+          moveWindow(active.id, { x: 0, y: 0, w: Math.floor(bounds.w / 2), h: bounds.h })
+        } else if (event.key === 'ArrowRight') {
+          moveWindow(active.id, {
+            x: Math.floor(bounds.w / 2),
+            y: 0,
+            w: Math.ceil(bounds.w / 2),
+            h: bounds.h,
+          })
+        } else if (event.key === 'ArrowUp') {
+          if (!active.maximized) toggleMaximize(active.id)
+        } else if (active.maximized) {
+          toggleMaximize(active.id)
         }
         return
       }
@@ -123,27 +179,23 @@ export function Shell() {
       ) {
         sequence.current = []
         triggerSignal()
-        setKonami(true)
-        notify('ПРОТОКОЛ 09 АКТИВИРОВАН', 'danger')
-        playSound('error')
-        if (konamiTimer.current) window.clearTimeout(konamiTimer.current)
-        konamiTimer.current = window.setTimeout(() => setKonami(false), 1900)
+        notify('Developer mode unlocked. Welcome, operator.', 'ok')
       }
     }
     window.addEventListener('keydown', onKey)
-    return () => {
-      window.removeEventListener('keydown', onKey)
-      if (konamiTimer.current) window.clearTimeout(konamiTimer.current)
-    }
+    return () => window.removeEventListener('keydown', onKey)
   }, [
     activeId,
+    closeWindow,
     contextMenu,
     focusWindow,
+    minimizeWindow,
+    moveWindow,
     notify,
-    paletteOpen,
+    openWindow,
+    overlay,
     phase,
-    playSound,
-    startOpen,
+    toggleMaximize,
     triggerSignal,
     windows,
   ])
@@ -152,7 +204,6 @@ export function Shell() {
     return (
       <div className="shell">
         <BootScreen onDone={bootDone} />
-        <div className="crt" />
       </div>
     )
   }
@@ -161,7 +212,6 @@ export function Shell() {
     return (
       <div className="shell">
         <LoginScreen />
-        <div className="crt" />
       </div>
     )
   }
@@ -170,7 +220,6 @@ export function Shell() {
     return (
       <div className="shell">
         <LockScreen />
-        <div className="crt" />
       </div>
     )
   }
@@ -184,42 +233,82 @@ export function Shell() {
   }
 
   return (
-    <div className={`shell ${glitch ? 'is-glitching' : ''} ${konami ? 'is-konami' : ''}`}>
+    <div className={`shell ${flash ? 'is-glitching' : ''}`}>
       <div
         className="desktop"
         onContextMenu={(event) => {
           const target = event.target
           if (
             target instanceof Element &&
-            target.closest('.win, .widget, .taskbar, .icon-grid, .start, .ctx-menu, .palette')
+            target.closest('.win, .dock, .topbar, .desktop-icons, .overview, .appgrid, .quick')
           ) {
             return
           }
           event.preventDefault()
           setContextMenu({ x: event.clientX, y: event.clientY })
-          setStartOpen(false)
-          setPaletteOpen(false)
+          setOverlay('none')
         }}
+        onPointerDown={() => {
+          if (contextMenu) setContextMenu(null)
+        }}
+        role="presentation"
       >
         <Wallpaper />
-        <ClockWidget />
         <DesktopIcons />
         {windows.map((win) => (
           <WindowFrame key={win.id} win={win} />
         ))}
       </div>
 
-      <Taskbar
-        startOpen={startOpen}
-        onToggleStart={() => {
-          setStartOpen((open) => !open)
-          setPaletteOpen(false)
+      <TopBar
+        activitiesOpen={overlay === 'activities'}
+        quickOpen={overlay === 'quick'}
+        onToggleActivities={() => {
           setContextMenu(null)
+          setOverlay((current) => (current === 'activities' ? 'none' : 'activities'))
+        }}
+        onToggleQuick={() => {
+          setContextMenu(null)
+          setOverlay((current) => (current === 'quick' ? 'none' : 'quick'))
         }}
       />
 
-      {startOpen && <StartMenu onClose={() => setStartOpen(false)} />}
-      {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} />}
+      <Dock
+        onOpenApps={() => {
+          setContextMenu(null)
+          setOverlay('apps')
+        }}
+        onNavigate={closeOverlays}
+      />
+
+      {overlay === 'activities' && (
+        <Activities
+          mode="overview"
+          onClose={closeOverlays}
+          onOpenApps={() => setOverlay('apps')}
+          onOpenOverview={() => setOverlay('activities')}
+        />
+      )}
+
+      {overlay === 'apps' && (
+        <Activities
+          mode="apps"
+          onClose={closeOverlays}
+          onOpenApps={() => setOverlay('apps')}
+          onOpenOverview={() => setOverlay('activities')}
+        />
+      )}
+
+      {overlay === 'quick' && (
+        <QuickSettings
+          onClose={() => setOverlay('none')}
+          onOpenSettings={() => {
+            setOverlay('none')
+            openWindow('settings')
+          }}
+        />
+      )}
+
       {contextMenu && (
         <ContextMenu
           x={contextMenu.x}
@@ -229,8 +318,8 @@ export function Shell() {
       )}
 
       <Toasts />
-      <div className="glitch" aria-hidden="true" />
-      <div className="crt" aria-hidden="true" />
+      {settings.nightLight && <div className="night-light" aria-hidden="true" />}
+      <div className="flash" aria-hidden="true" />
     </div>
   )
 }

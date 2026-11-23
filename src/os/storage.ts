@@ -10,17 +10,17 @@ export const KEYS = {
 } as const
 
 export const DEFAULT_SETTINGS: Settings = {
-  theme: 'phosphor',
-  wallpaper: 'grid',
-  crt: true,
+  theme: 'dark',
+  wallpaper: 'noble',
   sound: true,
   volume: 0.55,
   skipBoot: false,
   reduceMotion: false,
+  nightLight: false,
 }
 
-const THEMES: ThemeId[] = ['phosphor', 'amber', 'bone']
-const WALLPAPERS: WallpaperId[] = ['grid', 'signal', 'orbit']
+const THEMES: ThemeId[] = ['dark', 'light', 'hc']
+const WALLPAPERS: WallpaperId[] = ['noble', 'minimal', 'sunset']
 
 export function readJson<T>(key: string, fallback: T): T {
   try {
@@ -60,14 +60,12 @@ export function removeKeys(keys: string[]): void {
 }
 
 export function loadSettings(): Settings {
-  const raw = readJson<Partial<Settings> | null>(KEYS.settings, null)
-  if (!raw || typeof raw !== 'object') return { ...DEFAULT_SETTINGS }
+  const raw = readObject<Partial<Settings>>(KEYS.settings, {})
   return {
     theme: THEMES.includes(raw.theme as ThemeId) ? (raw.theme as ThemeId) : DEFAULT_SETTINGS.theme,
     wallpaper: WALLPAPERS.includes(raw.wallpaper as WallpaperId)
       ? (raw.wallpaper as WallpaperId)
       : DEFAULT_SETTINGS.wallpaper,
-    crt: typeof raw.crt === 'boolean' ? raw.crt : DEFAULT_SETTINGS.crt,
     sound: typeof raw.sound === 'boolean' ? raw.sound : DEFAULT_SETTINGS.sound,
     volume:
       typeof raw.volume === 'number' && Number.isFinite(raw.volume)
@@ -76,6 +74,8 @@ export function loadSettings(): Settings {
     skipBoot: typeof raw.skipBoot === 'boolean' ? raw.skipBoot : DEFAULT_SETTINGS.skipBoot,
     reduceMotion:
       typeof raw.reduceMotion === 'boolean' ? raw.reduceMotion : DEFAULT_SETTINGS.reduceMotion,
+    nightLight:
+      typeof raw.nightLight === 'boolean' ? raw.nightLight : DEFAULT_SETTINGS.nightLight,
   }
 }
 

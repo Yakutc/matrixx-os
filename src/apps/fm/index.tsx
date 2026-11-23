@@ -57,6 +57,13 @@ export default function FmApp(_props: AppProps) {
   }, [])
 
   useEffect(() => {
+    if (!settings.sound && playing) {
+      engineRef.current?.stop()
+      setPlaying(false)
+    }
+  }, [playing, settings.sound])
+
+  useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     const context = canvas.getContext('2d')
@@ -80,12 +87,12 @@ export default function FmApp(_props: AppProps) {
       if (canvas.width !== Math.floor(width * dpr)) resize()
       context.setTransform(dpr, 0, 0, dpr, 0, 0)
       const styles = getComputedStyle(document.documentElement)
-      const accent = styles.getPropertyValue('--accent').trim() || '#ffb347'
-      const live = styles.getPropertyValue('--live').trim() || '#b6ff5c'
-      const line = styles.getPropertyValue('--line').trim() || '#233126'
-      const panel = styles.getPropertyValue('--bg-2').trim() || '#0a0f0b'
-      const muted = styles.getPropertyValue('--text-muted').trim() || '#8b9987'
-      context.fillStyle = panel
+      const accent = styles.getPropertyValue('--accent').trim() || '#e95420'
+      const green = styles.getPropertyValue('--green').trim() || '#2ec27e'
+      const line = styles.getPropertyValue('--border').trim() || 'rgba(255,255,255,.12)'
+      const surface = styles.getPropertyValue('--surface-sunken').trim() || '#1a1a1a'
+      const muted = styles.getPropertyValue('--text-muted').trim() || '#9a9a9a'
+      context.fillStyle = surface
       context.fillRect(0, 0, width, height)
       context.strokeStyle = line
       context.lineWidth = 1
@@ -95,66 +102,38 @@ export default function FmApp(_props: AppProps) {
         context.lineTo(x + 0.5, height)
         context.stroke()
       }
-      for (let y = 0; y < height; y += 20) {
-        context.beginPath()
-        context.moveTo(0, y + 0.5)
-        context.lineTo(width, y + 0.5)
-        context.stroke()
-      }
 
       const analyser = engineRef.current?.analyserNode
       if (analyser && engineRef.current?.isPlaying) {
         analyser.getByteFrequencyData(data)
-        const bars = 42
+        const bars = 44
         const gap = 2
         const barWidth = Math.max(2, width / bars - gap)
         const step = Math.floor(data.length / bars)
         for (let index = 0; index < bars; index += 1) {
           const value = data[index * step] / 255
-          const barHeight = Math.max(2, value * height * 0.86)
-          context.fillStyle = index % 5 === 0 ? live : accent
-          context.globalAlpha = 0.35 + value * 0.65
+          const barHeight = Math.max(2, value * height * 0.82)
+          context.fillStyle = index % 6 === 0 ? green : accent
+          context.globalAlpha = 0.38 + value * 0.62
           context.fillRect(index * (barWidth + gap) + 2, height - barHeight, barWidth, barHeight)
         }
         context.globalAlpha = 1
-        context.beginPath()
-        const wave = data.slice(0, 96)
-        wave.forEach((value, index) => {
-          const x = (index / (wave.length - 1)) * width
-          const y = height / 2 + ((value - 128) / 128) * (height * 0.28)
-          if (index === 0) context.moveTo(x, y)
-          else context.lineTo(x, y)
-        })
-        context.strokeStyle = live
-        context.lineWidth = 1
-        context.stroke()
       } else {
-        const phase = time / 820
-        context.globalAlpha = 0.38
+        const phase = time / 900
         context.strokeStyle = accent
-        context.lineWidth = 1
+        context.globalAlpha = 0.45
+        context.lineWidth = 1.5
         context.beginPath()
         for (let x = 0; x <= width; x += 2) {
-          const y =
-            height * 0.52 +
-            Math.sin(x / 48 + phase) * height * 0.09 +
-            Math.sin(x / 17 - phase * 0.7) * height * 0.018
+          const y = height * 0.55 + Math.sin(x / 52 + phase) * height * 0.06
           if (x === 0) context.moveTo(x, y)
           else context.lineTo(x, y)
         }
         context.stroke()
-        context.globalAlpha = 0.2
-        context.fillStyle = accent
-        context.textAlign = 'center'
-        context.textBaseline = 'middle'
-        context.font = `600 ${Math.min(92, Math.max(44, height * 0.52))}px "Handjet Variable", monospace`
-        context.fillText('47.2', width / 2, height * 0.44)
         context.globalAlpha = 1
-        context.textAlign = 'left'
-        context.textBaseline = 'alphabetic'
         context.fillStyle = muted
-        context.font = '9px "IBM Plex Mono", monospace'
-        context.fillText('НЕСУЩАЯ 47.2 ГЦ · ОЖИДАНИЕ', 12, height - 10)
+        context.font = '12px Ubuntu, sans-serif'
+        context.fillText('Stopped — press play to start the engine', 12, height - 12)
       }
     }
     raf = requestAnimationFrame(draw)
@@ -179,13 +158,6 @@ export default function FmApp(_props: AppProps) {
     setPlaying(started)
   }
 
-  useEffect(() => {
-    if (!settings.sound && playing) {
-      engineRef.current?.stop()
-      setPlaying(false)
-    }
-  }, [playing, settings.sound])
-
   const choosePreset = (next: FmPresetId) => {
     setPreset(next)
     setBpm(PRESETS[next].bpm)
@@ -208,24 +180,29 @@ export default function FmApp(_props: AppProps) {
     <div className="fm">
       <div className="fm__head">
         <div>
-          <div className="fm__kicker">ГЕНЕРАТОР / КАНАЛ 47.2</div>
+          <div className="fm__kicker">Now Playing</div>
           <div className="fm__title">{current.title}</div>
-          <div className="fm__subtitle">{current.subtitle} · СИНТЕЗ: РЕАЛЬНОЕ ВРЕМЯ</div>
+          <div className="fm__subtitle">{current.subtitle}</div>
         </div>
         <div className={`fm__state ${playing ? 'is-live' : ''}`}>
           <span className={playing ? 'led' : 'led led--accent'} />
-          {playing ? 'ПЕРЕДАЧА' : 'ОЖИДАНИЕ'}
+          {playing ? 'Playing' : 'Stopped'}
         </div>
       </div>
 
-      <div className="fm__viz-wrap">
-        <canvas ref={canvasRef} className="fm__viz" aria-label="Визуализатор сигнала" />
-        <div className="fm__freqs" aria-hidden="true">
-          <span>47.2</span>
-          <span>94.4</span>
-          <span>141.6</span>
+      <div className="fm__main">
+        <div className="fm__art" data-preset={preset}>
+          <span>M</span>
+          <small>Matrixx Music</small>
         </div>
-        <div className="fm__viz-label">СПЕКТР / 47.2 Гц</div>
+        <div className="fm__viz-wrap">
+          <canvas ref={canvasRef} className="fm__viz" aria-label="Audio spectrum" />
+          <div className="fm__freqs" aria-hidden="true">
+            <span>47.2</span>
+            <span>94.4</span>
+            <span>141.6</span>
+          </div>
+        </div>
       </div>
 
       <div className="fm__controls">
@@ -234,13 +211,13 @@ export default function FmApp(_props: AppProps) {
           className={`fm__play ${playing ? 'is-playing' : ''}`}
           onClick={() => void toggle()}
           disabled={!settings.sound}
-          aria-label={playing ? 'Остановить генератор' : 'Запустить генератор'}
+          aria-label={playing ? 'Stop' : 'Play'}
         >
           <Icon name={playing ? 'stop' : 'play'} size={20} />
         </button>
         <div className="fm__control">
           <div className="fm__control-head">
-            <span>ТЕМП</span>
+            <span>Tempo</span>
             <b>{bpm} BPM</b>
           </div>
           <input
@@ -249,12 +226,12 @@ export default function FmApp(_props: AppProps) {
             max="120"
             value={bpm}
             onChange={(event) => changeBpm(Number(event.target.value))}
-            aria-label="Темп"
+            aria-label="Tempo"
           />
         </div>
         <div className="fm__control">
           <div className="fm__control-head">
-            <span>ГРОМКОСТЬ</span>
+            <span>Volume</span>
             <b>{Math.round(volume * 100)}%</b>
           </div>
           <input
@@ -263,16 +240,12 @@ export default function FmApp(_props: AppProps) {
             max="100"
             value={Math.round(volume * 100)}
             onChange={(event) => changeVolume(Number(event.target.value) / 100)}
-            aria-label="Громкость генератора"
+            aria-label="Volume"
           />
-        </div>
-        <div className="fm__mode">
-          <span>MODE</span>
-          <b>{current.id.toUpperCase()}</b>
         </div>
       </div>
 
-      <div className="fm__presets" role="group" aria-label="Пресеты">
+      <div className="fm__presets" role="group" aria-label="Presets">
         {(Object.keys(PRESETS) as FmPresetId[]).map((id) => (
           <button
             key={id}
@@ -289,11 +262,11 @@ export default function FmApp(_props: AppProps) {
 
       <div className="fm__foot">
         {settings.sound ? (
-          <span>ГЕНЕРАТОР ПОДКЛЮЧЁН К КОНТУРУ</span>
+          <span>Generative Web Audio · no samples, no network</span>
         ) : (
-          <span className="danger">ЗВУК СИСТЕМЫ ВЫКЛЮЧЕН — ВКЛЮЧИТЕ В ТРЕЕ</span>
+          <span className="danger">System sounds are off — enable them in Quick Settings</span>
         )}
-        <span>НИИ-9 · СИНТЕЗ БЕЗ ЗАПИСИ</span>
+        <span>Matrixx Linux</span>
       </div>
     </div>
   )

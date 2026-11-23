@@ -1,55 +1,79 @@
 import { useState } from 'react'
-import { APP_META, APP_ORDER } from './apps'
 import { useOS } from './OSProvider'
 import { Icon } from './icons'
-import type { AppId } from './types'
 
 export function DesktopIcons() {
-  const { openWindow } = useOS()
-  const [selected, setSelected] = useState<AppId | null>(null)
+  const { openWindow, notify } = useOS()
+  const [selected, setSelected] = useState<'home' | 'trash' | null>(null)
   const coarse =
     typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
 
-  const launch = (appId: AppId) => {
-    openWindow(appId)
+  const openHome = () => {
+    openWindow('files', { payload: { path: '/home/operator' } })
     setSelected(null)
   }
 
+  const openTrash = () => {
+    notify('Trash is empty', 'info')
+    setSelected(null)
+  }
+
+  const activate = (kind: 'home' | 'trash') => {
+    if (kind === 'home') openHome()
+    else openTrash()
+  }
+
   return (
-    <div className="icon-grid">
-      <div className="icon-grid__head">МОДУЛИ / 08</div>
-      <div className="icon-grid__cells">
-        {APP_ORDER.map((appId) => {
-          const meta = APP_META[appId]
-          return (
-            <button
-              key={appId}
-              type="button"
-              className={`icon-tile ${selected === appId ? 'is-selected' : ''}`}
-              aria-label={`Открыть ${meta.title}`}
-              onClick={() => {
-                if (coarse) {
-                  launch(appId)
-                  return
-                }
-                setSelected(appId)
-              }}
-              onDoubleClick={() => launch(appId)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault()
-                  launch(appId)
-                }
-              }}
-            >
-              <span className="icon-tile__glyph">
-                <Icon name={appId} size={20} />
-              </span>
-              <span className="icon-tile__label">{meta.title}</span>
-            </button>
-          )
-        })}
-      </div>
+    <div className="desktop-icons">
+      <button
+        type="button"
+        className={`desktop-icon ${selected === 'home' ? 'is-selected' : ''}`}
+        onClick={() => {
+          if (coarse) {
+            openHome()
+            return
+          }
+          setSelected('home')
+        }}
+        onDoubleClick={openHome}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            openHome()
+          }
+        }}
+        aria-label="Open Home folder"
+      >
+        <span className="desktop-icon__art" data-kind="home">
+          <Icon name="home" size={26} />
+        </span>
+        <span>Home</span>
+      </button>
+
+      <button
+        type="button"
+        className={`desktop-icon ${selected === 'trash' ? 'is-selected' : ''}`}
+        onClick={() => {
+          if (coarse) {
+            openTrash()
+            return
+          }
+          setSelected('trash')
+        }}
+        onDoubleClick={openTrash}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            activate('trash')
+          }
+        }}
+        aria-label="Open Trash"
+      >
+        <span className="desktop-icon__art" data-kind="trash">
+          <Icon name="trash" size={26} />
+        </span>
+        <span>Trash</span>
+      </button>
     </div>
   )
 }

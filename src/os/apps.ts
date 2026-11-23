@@ -23,76 +23,76 @@ export const APP_ORDER: AppId[] = [
 
 export const APP_META: Record<AppId, AppMeta> = {
   terminal: {
-    index: '01',
-    title: 'ТЕРМИНАЛ',
-    short: 'MSH',
-    description: 'командная оболочка',
+    index: '1',
+    title: 'Terminal',
+    short: 'Terminal',
+    description: 'Command line',
     singleton: false,
-    width: 780,
-    height: 480,
+    width: 900,
+    height: 560,
   },
   files: {
-    index: '02',
-    title: 'АРХИВ',
-    short: 'DISK',
-    description: 'виртуальный диск',
+    index: '2',
+    title: 'Files',
+    short: 'Files',
+    description: 'Browse your files',
     singleton: false,
-    width: 800,
-    height: 520,
+    width: 940,
+    height: 600,
   },
   notes: {
-    index: '03',
-    title: 'ЖУРНАЛ',
-    short: 'LOG',
-    description: 'записи оператора',
+    index: '3',
+    title: 'Text Editor',
+    short: 'Text Editor',
+    description: 'Write and save notes',
     singleton: false,
-    width: 720,
-    height: 540,
+    width: 880,
+    height: 600,
   },
   settings: {
-    index: '04',
-    title: 'НАСТРОЙКИ',
-    short: 'CFG',
-    description: 'темы, звук, эффекты',
+    index: '4',
+    title: 'Settings',
+    short: 'Settings',
+    description: 'Appearance, sound, system',
     singleton: true,
-    width: 680,
-    height: 580,
+    width: 900,
+    height: 620,
   },
   system: {
-    index: '05',
-    title: 'СИСТЕМА',
-    short: 'SYS',
-    description: 'диагностика и процессы',
+    index: '5',
+    title: 'System Monitor',
+    short: 'System Monitor',
+    description: 'CPU, memory and processes',
     singleton: true,
-    width: 640,
-    height: 560,
+    width: 920,
+    height: 600,
   },
   snake: {
-    index: '06',
-    title: 'ЗМЕЙ',
-    short: '09',
-    description: 'протокол тренировки',
+    index: '6',
+    title: 'Snake',
+    short: 'Snake',
+    description: 'Classic game',
     singleton: true,
-    width: 560,
-    height: 560,
+    width: 780,
+    height: 640,
   },
   fm: {
-    index: '07',
-    title: 'MATRIXX FM',
-    short: '47.2',
-    description: 'генератор сигнала',
+    index: '7',
+    title: 'Music',
+    short: 'Music',
+    description: 'Generative synthwave player',
     singleton: true,
-    width: 620,
-    height: 500,
+    width: 900,
+    height: 600,
   },
   about: {
-    index: '08',
-    title: 'О СИСТЕМЕ',
-    short: 'INFO',
-    description: 'манифест сборки',
+    index: '8',
+    title: 'About',
+    short: 'About',
+    description: 'Matrixx Linux 24.04 LTS',
     singleton: true,
-    width: 580,
-    height: 500,
+    width: 760,
+    height: 600,
   },
 }
 
@@ -104,21 +104,18 @@ export function isAppId(value: string): value is AppId {
 
 export function createDefaultRect(appId: AppId, bounds: Rect, offset: number): Rect {
   const meta = APP_META[appId]
-  const reservedLeft = bounds.w < 1100 ? 280 : 0
-  const maxWidth = bounds.w < 1100 ? bounds.w - reservedLeft : bounds.w - 16
-  const w = Math.min(meta.width, maxWidth)
+  const w = Math.min(meta.width, bounds.w - 16)
   const h = Math.min(meta.height, bounds.h - 16)
   if (bounds.w < 720) {
-    return { x: bounds.x + 8, y: bounds.y + 8, w: bounds.w - 16, h: bounds.h - 16 }
+    return { x: 0, y: 0, w: bounds.w, h: bounds.h }
   }
-  const cascade = offset % 6
-  const baseX = bounds.w < 1340 ? 258 : Math.round(bounds.w * 0.19)
+  const cascade = (offset % 6) * 28
   const x = Math.min(
-    Math.max(bounds.x + baseX + cascade * 38, bounds.x + 24),
+    Math.max(88 + cascade, bounds.x + (bounds.w - w) / 2 - 40 + cascade),
     bounds.x + bounds.w - w - 16,
   )
   const y = Math.min(
-    bounds.y + 96 + cascade * 38,
+    Math.max(bounds.y + 28 + cascade, bounds.y + (bounds.h - h) / 2 - 20),
     bounds.y + bounds.h - h - 16,
   )
   return { x, y, w, h }

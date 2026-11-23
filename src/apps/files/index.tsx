@@ -39,7 +39,7 @@ function TreeNode({
       <button
         type="button"
         className={`files__node ${selected === path ? 'is-selected' : ''}`}
-        style={{ paddingLeft: 8 + depth * 14 }}
+        style={{ paddingLeft: 10 + depth * 14 }}
         onClick={() => {
           onSelect(path)
           if (isDir) onToggle(path)
@@ -49,7 +49,7 @@ function TreeNode({
         <span className="files__chevron">
           {isDir ? <Icon name="chevron" size={11} /> : ''}
         </span>
-        <Icon name={isDir ? 'folder' : 'file'} size={13} />
+        <Icon name={isDir ? 'folder' : 'file'} size={14} />
         <span className="files__name">{node.name}</span>
         {isDir && <span className="files__count">{node.children.length}</span>}
       </button>
@@ -77,12 +77,25 @@ function TreeNode({
   )
 }
 
-export default function FilesApp(_props: AppProps) {
-  const { openWindow } = useOS()
-  const [selectedPath, setSelectedPath] = useState('/README.txt')
+const PLACES = [
+  { label: 'Home', path: '/home/operator', icon: 'home' as const },
+  { label: 'Documents', path: '/home/operator/Documents', icon: 'folder' as const },
+  { label: 'Downloads', path: '/home/operator/Downloads', icon: 'folder' as const },
+  { label: 'Pictures', path: '/home/operator/Pictures', icon: 'folder' as const },
+  { label: 'Sector 09', path: '/opt/sector-09', icon: 'folder' as const },
+]
+
+export default function FilesApp({ payload }: AppProps) {
+  const { openWindow, notify } = useOS()
+  const initialPath =
+    (payload as { path?: unknown } | undefined)?.path &&
+    typeof (payload as { path?: unknown }).path === 'string'
+      ? (payload as { path: string }).path
+      : '/home/operator'
+  const [selectedPath, setSelectedPath] = useState(initialPath)
   const [showHidden, setShowHidden] = useState(false)
   const [expanded, setExpanded] = useState(
-    () => new Set(['/home', '/home/operator', '/sys', '/объект-09']),
+    () => new Set(['/home', '/home/operator', '/var', '/var/log', '/opt']),
   )
 
   const selectedNode = useMemo(() => {
@@ -102,7 +115,9 @@ export default function FilesApp(_props: AppProps) {
   const openTerminal = () => {
     if (!selectedNode) return
     const command =
-      selectedNode.type === 'dir' ? `ls ${selectedPath}` : `cat ${selectedPath}`
+      selectedNode.type === 'dir'
+        ? `ls -la "${selectedPath}"`
+        : `cat "${selectedPath}"`
     openWindow('terminal', { payload: { command } })
   }
 
@@ -110,6 +125,20 @@ export default function FilesApp(_props: AppProps) {
     selectedNode?.type === 'dir'
       ? (selectedNode as FsDir).children.filter((child) => showHidden || !child.hidden)
       : []
+
+  const selectPlace = (path: string) => {
+    setSelectedPath(path)
+    setExpanded((current) => {
+      const next = new Set(current)
+      const parts = path.split('/').filter(Boolean)
+      let built = ''
+      for (const part of parts) {
+        built += `/${part}`
+        next.add(built)
+      }
+      return next
+    })
+  }
 
   return (
     <div className="files">
@@ -128,28 +157,49 @@ export default function FilesApp(_props: AppProps) {
           className={`files__hidden ${showHidden ? 'is-on' : ''}`}
           onClick={() => setShowHidden((value) => !value)}
           aria-pressed={showHidden}
-          title="Показывать скрытые файлы"
+          title="Show hidden files"
         >
-          <Icon name="eye" size={13} />
-          СКРЫТЫЕ
+          <Icon name="eye" size={14} />
+          Hidden
         </button>
         <button
           type="button"
           className="btn files__terminal-btn"
           onClick={openTerminal}
           disabled={!selectedNode}
+          title="Open in Terminal"
         >
-          <Icon name="terminal" size={13} />
-          В ТЕРМИНАЛ
+          <Icon name="terminal" size={14} />
+          Terminal
         </button>
       </div>
 
       <div className="files__layout">
         <div className="files__tree">
-          <div className="files__disk">
-            <span className="led" />
-            MATRIXX DISK 0
+          <div className="files__places">
+            <div className="files__places-title">Places</div>
+            {PLACES.map((place) => (
+              <button
+                key={place.label}
+                type="button"
+                className={`files__place ${selectedPath === place.path ? 'is-selected' : ''}`}
+                onClick={() => selectPlace(place.path)}
+              >
+                <Icon name={place.icon} size={15} />
+                {place.label}
+              </button>
+            ))}
+            <button
+              type="button"
+              className="files__place"
+              onClick={() => notify('Trash is empty', 'info')}
+            >
+              <Icon name="trash" size={15} />
+              Trash
+            </button>
           </div>
+
+          <div className="files__places-title files__places-title--system">File System</div>
           <button
             type="button"
             className={`files__node files__node--root ${
@@ -158,10 +208,10 @@ export default function FilesApp(_props: AppProps) {
             onClick={() => setSelectedPath('/')}
           >
             <span className="files__chevron" />
-            <Icon name="folder" size={13} />
-            <span className="files__name">КОРЕНЬ</span>
+            <Icon name="folder" size={14} />
+            <span className="files__name">Root</span>
           </button>
-          {listDir('/', showHidden).map((child) => {
+          {listDir('/', true).map((child) => {
             const path = normalizePath('/', child.name)
             return (
               <TreeNode
@@ -182,9 +232,9 @@ export default function FilesApp(_props: AppProps) {
         <div className="files__preview">
           {!selectedNode && (
             <div className="files__empty">
-              <Icon name="folder" size={30} />
-              <b>КОРНЕВОЙ КАТАЛОГ</b>
-              <span>Выберите файл слева</span>
+              <Icon name="folder" size={34} />
+              <b>File System</b>
+              <span>Select a file on the left</span>
             </div>
           )}
           {selectedNode?.type === 'file' && (
@@ -192,15 +242,15 @@ export default function FilesApp(_props: AppProps) {
               <div className="files__filehead">
                 <div>
                   <div className="files__filename">
-                    <Icon name="file" size={14} /> {selectedNode.name}
+                    <Icon name="file" size={15} /> {selectedNode.name}
                   </div>
                   <div className="files__filemeta">
-                    <span>ВЛАДЕЛЕЦ: {selectedNode.owner}</span>
+                    <span>Owner: {selectedNode.owner}</span>
                     <span>{formatBytes(selectedNode.content)}</span>
                     <span>{selectedNode.updated}</span>
                   </div>
                 </div>
-                <span className="files__readonly">ТОЛЬКО ДЛЯ ЧТЕНИЯ</span>
+                <span className="files__readonly">Read only</span>
               </div>
               <pre className="files__content">{selectedNode.content}</pre>
             </>
@@ -209,25 +259,29 @@ export default function FilesApp(_props: AppProps) {
             <>
               <div className="files__filehead">
                 <div className="files__filename">
-                  <Icon name="folder" size={14} /> {selectedNode.name || 'КОРЕНЬ'}
+                  <Icon name="folder" size={15} /> {selectedNode.name || 'Root'}
                 </div>
-                <span className="files__readonly">КАТАЛОГ · {directoryChildren.length}</span>
+                <span className="files__readonly">
+                  {directoryChildren.length} items
+                </span>
               </div>
               <div className="files__dirlist">
                 {directoryChildren.map((child) => (
                   <button
                     key={child.name}
                     type="button"
-                    className="files__diritem"
+                    className={`files__diritem ${child.hidden ? 'is-hidden' : ''}`}
                     onClick={() => setSelectedPath(normalizePath(selectedPath, child.name))}
                   >
-                    <Icon name={child.type === 'dir' ? 'folder' : 'file'} size={13} />
+                    <Icon name={child.type === 'dir' ? 'folder' : 'file'} size={14} />
                     <span>{child.name}</span>
-                    <span>{child.type === 'dir' ? 'КАТАЛОГ' : formatBytes(child.content)}</span>
+                    <span>
+                      {child.type === 'dir' ? 'Folder' : formatBytes(child.content)}
+                    </span>
                   </button>
                 ))}
                 {directoryChildren.length === 0 && (
-                  <div className="files__empty files__empty--small">КАТАЛОГ ПУСТ</div>
+                  <div className="files__empty files__empty--small">Folder is empty</div>
                 )}
               </div>
             </>
@@ -237,7 +291,7 @@ export default function FilesApp(_props: AppProps) {
 
       <div className="files__status">
         <span>{selectedPath}</span>
-        <span>640 КБ / 640 КБ · ЗАПИСЬ ЗАБЛОКИРОВАНА</span>
+        <span>640 KB / 640 KB · Read-only volume</span>
       </div>
     </div>
   )

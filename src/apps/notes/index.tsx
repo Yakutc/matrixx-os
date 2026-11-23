@@ -14,22 +14,22 @@ interface Note {
 const SEED: Note[] = [
   {
     id: 'seed-1',
-    title: 'ИНСТРУКЦИЯ',
-    body: `Это журнал оператора. Всё, что вы напишете, сохраняется автоматически.
+    title: 'WELCOME',
+    body: `This is the Text Editor. Everything is saved automatically.
 
-Система не отправляет записи в сеть. Пока.
+The editor is local to this machine. It does not sync anywhere.
 
-Не храните здесь имена.`,
+Do not store names here.`,
     updated: Date.now() - 1000 * 60 * 47,
   },
   {
     id: 'seed-2',
-    title: 'СЕАНС 04',
-    body: `03:47 — приёмник включился сам.
-03:48 — сигнал 47.2 Гц, девять секунд.
-03:52 — дверь сектора 4 открыта изнутри.
+    title: 'SESSION 04',
+    body: `03:47 — receiver woke up on its own.
+03:48 — signal 47.2 Hz, nine seconds.
+03:52 — Sector 04 door opened from inside.
 
-Дальше запись обрывается.`,
+The recording ends after that.`,
     updated: Date.now() - 1000 * 60 * 60 * 24 * 29,
   },
 ]
@@ -57,9 +57,9 @@ function loadNotes(): Note[] {
 }
 
 function formatStamp(value: number): string {
-  return new Date(value).toLocaleString('ru-RU', {
-    day: '2-digit',
-    month: '2-digit',
+  return new Date(value).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
   })
@@ -94,7 +94,7 @@ export default function NotesApp(_props: AppProps) {
     saveTimer.current = window.setTimeout(() => {
       const saved = writeJson(KEYS.notes, notes)
       setDirty(!saved)
-      if (!saved) notify('НЕ УДАЛОСЬ СОХРАНИТЬ ЖУРНАЛ', 'danger')
+      if (!saved) notify('Could not save the document', 'danger')
     }, 400)
     return () => {
       if (saveTimer.current) window.clearTimeout(saveTimer.current)
@@ -122,12 +122,12 @@ export default function NotesApp(_props: AppProps) {
 
   const addNote = () => {
     if (notes.length >= 500) {
-      notify('ЖУРНАЛ ПЕРЕПОЛНЕН: 500 ЗАПИСЕЙ', 'danger')
+      notify('The document limit has been reached (500)', 'danger')
       return
     }
     const note: Note = {
       id: `n-${Date.now().toString(36)}`,
-      title: `ЗАПИСЬ ${notes.length + 1}`,
+      title: 'Untitled Document',
       body: '',
       updated: Date.now(),
     }
@@ -146,19 +146,18 @@ export default function NotesApp(_props: AppProps) {
     setNotes((current) => current.filter((note) => note.id !== selected.id))
     setSelectedId(notes.find((note) => note.id !== selected.id)?.id ?? '')
     setConfirmDelete(false)
-    playSound('error')
   }
 
   return (
     <div className="notes">
       <div className="notes__sidebar">
         <div className="notes__search">
-          <Icon name="search" size={13} />
+          <Icon name="search" size={14} />
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="ПОИСК"
-            aria-label="Поиск по журналу"
+            placeholder="Search"
+            aria-label="Search documents"
           />
         </div>
 
@@ -170,32 +169,30 @@ export default function NotesApp(_props: AppProps) {
               className={`notes__item ${selected?.id === note.id ? 'is-selected' : ''}`}
               onClick={() => setSelectedId(note.id)}
             >
-              <span className="notes__item-title">{note.title || 'БЕЗ НАЗВАНИЯ'}</span>
+              <span className="notes__item-title">{note.title || 'Untitled Document'}</span>
               <span className="notes__item-meta">
                 {formatStamp(note.updated)}
-                <span>{note.body.trim().split('\n')[0]?.slice(0, 26) ?? '—'}</span>
+                <span>{note.body.trim().split('\n')[0]?.slice(0, 40) ?? 'Empty document'}</span>
               </span>
             </button>
           ))}
-          {filtered.length === 0 && (
-            <div className="notes__none">НЕТ ЗАПИСЕЙ</div>
-          )}
+          {filtered.length === 0 && <div className="notes__none">No documents</div>}
         </div>
 
         <div className="notes__sidebar-foot">
           <button type="button" className="btn notes__new" onClick={addNote}>
-            <Icon name="plus" size={12} />
-            НОВАЯ
+            <Icon name="plus" size={13} />
+            New
           </button>
           <button
             type="button"
             className={`btn btn--icon ${confirmDelete ? 'btn--danger' : ''}`}
             onClick={removeSelected}
             disabled={!selected}
-            title={confirmDelete ? 'Подтвердить удаление' : 'Удалить запись'}
-            aria-label="Удалить запись"
+            title={confirmDelete ? 'Confirm delete' : 'Delete document'}
+            aria-label="Delete document"
           >
-            <Icon name="trash" size={13} />
+            <Icon name="trash" size={14} />
           </button>
         </div>
       </div>
@@ -208,11 +205,11 @@ export default function NotesApp(_props: AppProps) {
                 className="notes__title"
                 value={selected.title}
                 onChange={(event) => update({ title: event.target.value.slice(0, 120) })}
-                placeholder="ЗАГОЛОВОК"
-                aria-label="Заголовок записи"
+                placeholder="Title"
+                aria-label="Document title"
               />
               <div className="notes__status">
-                {dirty ? 'СОХРАНЕНИЕ…' : 'СОХРАНЕНО'}
+                {dirty ? 'Saving…' : 'Saved'}
                 <span>{formatStamp(selected.updated)}</span>
               </div>
             </div>
@@ -221,17 +218,17 @@ export default function NotesApp(_props: AppProps) {
               value={selected.body}
               maxLength={20000}
               onChange={(event) => update({ body: event.target.value })}
-              placeholder="Текст записи…"
-              aria-label="Текст записи"
+              placeholder="Start typing…"
+              aria-label="Document text"
             />
             <div className="notes__foot">
-              <span>{selected.body.length} СИМВ.</span>
-              <span>{selected.body.trim() ? selected.body.trim().split(/\s+/).length : 0} СЛОВ</span>
-              <span>{confirmDelete ? 'НАЖМИТЕ УДАЛИТЬ ЕЩЁ РАЗ' : 'АВТОСОХРАНЕНИЕ ВКЛ.'}</span>
+              <span>{selected.body.length} characters</span>
+              <span>{selected.body.trim() ? selected.body.trim().split(/\s+/).length : 0} words</span>
+              <span>{confirmDelete ? 'Press delete again to confirm' : 'Autosave on'}</span>
             </div>
           </>
         ) : (
-          <div className="notes__empty">ВЫБЕРИТЕ ЗАПИСЬ ИЛИ СОЗДАЙТЕ НОВУЮ</div>
+          <div className="notes__empty">Select a document or create a new one</div>
         )}
       </div>
     </div>

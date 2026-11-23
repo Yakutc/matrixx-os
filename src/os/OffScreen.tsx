@@ -26,8 +26,9 @@ export function OffScreen() {
       }}
     >
       <div className="off__inner">
-        <div className="off__title">ПИТАНИЕ<br />ОТКЛЮЧЕНО</div>
-        <div className="off__sub">НАЖМИТЕ, ЧТОБЫ ВКЛЮЧИТЬ</div>
+        <div className="off__logo">M</div>
+        <div className="off__title">Power Off</div>
+        <div className="off__sub">Press any key to start Matrixx Linux 24.04 LTS</div>
       </div>
     </div>
   )

@@ -1,66 +1,73 @@
-# Дизайн MATRIXX OS
+# Design notes
 
-## Направление
+## Direction
 
-Не пародия на Windows 95 и не «неоновый киберпанк». Визуальный язык — **советский
-промышленный терминал, встретивший Teenage Engineering**: костяная типографика на
-смоляном фоне, янтарный phosphor, кислотный лайм только для живых состояний,
-жёсткие 1px линии, регистрационные метки, индексы и предупреждающие полосы.
+Matrixx Linux 24.04 LTS is an Ubuntu/GNOME-inspired desktop, not a generic "web OS"
+theme. The goal is immediate recognition: GRUB, systemd, GDM, a black top bar,
+Activities, a left dock, GNOME header bars, Yaru colors and Ubuntu typography.
 
-Ощущение калиброванного прибора: каждое окно — не карточка, а панель с номером,
-серийной маркировкой `NII-9/04` и LED-индикатором. Ошибка — красная, жизнь — лаймовая,
-интерактив — янтарный. Никаких скруглений, размытых теней и стекла.
+The fiction is subtle: the hostname is `matrixx`, Sector 09 exists in `/opt`, and
+the 47.2 Hz receiver is still warm. The interface itself stays a believable Linux
+desktop — no neon cyberpunk, no purple gradients, no fake terminal overlay.
 
-## Палитра
+## Tokens
 
-| Роль | Phosphor | Amber | Bone |
+Defined in `src/styles/tokens.css`:
+
+| Role | Dark (Yaru) | Light | High Contrast |
 | --- | --- | --- | --- |
-| Фон | `#050806` | `#080604` | `#e8e2d2` |
-| Панель | `#0c120d` | `#100b06` | `#f2ecdc` |
-| Текст | `#dfe9d8` | `#f4e7cf` | `#14160f` |
-| Акцент | `#ffb347` | `#ff9e2c` | `#a83418` |
-| Live | `#b6ff5c` | `#ffd35c` | `#3f6b3a` |
+| Background | `#1e1e1e` | `#f2f2f2` | `#000000` |
+| Surface | `#242424` | `#fafafa` | `#000000` |
+| Header bar | `#303030` | `#ebebeb` | `#000000` |
+| Text | `#ffffff` | `#1d1d1d` | `#ffffff` |
+| Accent | `#e95420` | `#e95420` | `#ffd700` |
+| Green | `#2ec27e` | `#26a269` | `#6bff6b` |
+| Red | `#e01b24` | `#c01c28` | `#ff6b6b` |
 
-Все цвета — CSS-переменные в `src/styles/tokens.css`. В компонентах нет хардкода
-палитры, кроме canvas-визуализаций, которые читают переменные через
-`getComputedStyle`.
+Rounded windows (12px), soft shadows, 8px controls, orange focus rings.
 
-## Типографика
+## Typography
 
-- **Handjet Variable** — логотип, часы, индексы, крупные цифры. Пиксельная
-  вариативная гарнитура с кириллицей; задаёт «приборный» характер.
-- **IBM Plex Mono** — управление, подписи, терминал, таблицы. Технический голос.
-- **Golos Text** — журнал, досье, длинные абзацы. Человеческий голос внутри машины.
+- **Ubuntu** for the shell and applications.
+- **Ubuntu Mono** for Terminal, file previews and the Text Editor buffer.
 
-Шрифты лежат в npm-пакетах Fontsource и попадают в `dist/assets`; ни одного
-внешнего CDN-запроса.
+Both are self-hosted via Fontsource and bundled into `dist/assets`.
 
-## Сетка и композиция
+## Shell
 
-- Сетка 48px, крупные линии каждые 240px.
-- Иконки модулей — блок 2×4 слева сверху; часы-виджет — справа сверху; огромный
-  `MATRIXX` обрезан правым нижним краем.
-- Окна каскадом: каждый следующий шаг +38px, так что шапка предыдущего окна
-  остаётся видимой.
-- Панель задач 46px (56px на мобильном), стартовое меню — две колонки на десктопе.
-- Мобильная версия сохраняет айдентику: иконки, wordmark, «MATRIXX» на кнопке
-  «Пуск», увеличенные touch-цели.
+- 32px black top bar: Activities, active app, clock, status cluster.
+- 68px left dock, translucent, 48px colorful app icons, running indicators.
+- Activities overview: search, window cards, favorites, application grid.
+- GNOME quick settings: Wi-Fi, Bluetooth, Night Light, Do Not Disturb, volume,
+  lock, settings, power.
+- Desktop icons for Home and Trash, like an Ubuntu session.
+- Windows use GNOME header bars and support drag, resize, minimize, maximize,
+  double-click maximize, and `Super + arrow` snapping.
 
-## Движение
+## Applications
 
-Только осмысленные переходы: BIOS-печать, глитч, открытие окна 140–180 мс,
-подсветка LED, вспышка при `signal`. Всё отключается через
-`prefers-reduced-motion` и тумблер «Уменьшить движение».
+The apps are styled as native GTK/GNOME programs, not web dashboards:
 
-## Звук
+- Terminal: dark, monospace, tab strip, block cursor.
+- Files: Nautilus-style places sidebar and preview.
+- Text Editor: document list, autosave, monospace buffer.
+- Settings: sidebar pages (Appearance, Sound, System, About).
+- System Monitor: Resources/Processes tabs, graphs and integrity check.
+- Music: album art, controls, spectrum.
+- Snake: clean dark game board with GTK-style overlay.
+- About: GNOME Settings About page.
 
-Web Audio, синтез без файлов: короткий square-клик, sweep открытия/закрытия,
-низкий buzz ошибки и двухнотный chime входа. MATRIXX FM — отдельный генератор
-synthwave: пэд, бас, арп с дилеем, барабаны из шума и синуса.
+## Motion and sound
 
-## Anti-slop
+Animations are short (120–180ms) and functional: GDM reveal, window open, overview
+fade, quick settings slide, dock indicator. `prefers-reduced-motion` and the
+"Animations" setting disable them. System sounds are a login chime and optional test
+sound; the Music app generates its own audio.
 
-Запрещены: Inter/Roboto/Space Grotesk, фиолетовые градиенты, glassmorphism,
-скруглённые карточки, emoji-иконки, Tailwind-дефолт, blur-тени, «AI startup»
-формулировки. Разрешены: жёсткие тени, индексы, моно-подписи, асимметрия, зерно,
-сканлайны и редкие следы лора.
+## Anti-slop rules
+
+- No fake "AI startup" gradients, glassmorphism cards, or emoji icons.
+- No Inter/Roboto/Space Grotesk.
+- No external CDNs or runtime network requests.
+- No random rounded cards without a Linux reason.
+- Every decorative detail should exist in GNOME, Ubuntu, or a Linux tiling setup.

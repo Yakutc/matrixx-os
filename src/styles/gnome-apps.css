@@ -1,0 +1,33 @@
+.term {
+  font-family: var(--font-mono);
+}
+
+.files,
+.notes,
+.settings,
+.system,
+.fm,
+.snake,
+.about {
+  font-family: var(--font-ui);
+}
+
+.files__content,
+.notes__body {
+  font-variant-ligatures: none;
+}
+
+.overview__pill svg {
+  margin-right: 4px;
+  vertical-align: -2px;
+}
+
+button.notification {
+  border: 1px solid var(--border);
+}
+
+@media (max-width: 720px) {
+  .topbar__clock .clock-date {
+    display: none;
+  }
+}

@@ -1,8 +1,5 @@
 import { useOS } from './OSProvider'
 import { Icon } from './icons'
-import type { WallpaperId } from './types'
-
-const WALLPAPERS: WallpaperId[] = ['grid', 'signal', 'orbit']
 
 export function ContextMenu({
   x,
@@ -13,47 +10,53 @@ export function ContextMenu({
   y: number
   onClose: () => void
 }) {
-  const { openWindow, settings, setSettings, reboot } = useOS()
-  const left = Math.min(x, window.innerWidth - 244)
-  const top = Math.min(y, window.innerHeight - 230)
+  const { openWindow, notify } = useOS()
+  const left = Math.min(x, window.innerWidth - 260)
+  const top = Math.min(y, window.innerHeight - 220)
 
   const run = (action: () => void) => {
     action()
     onClose()
   }
 
-  const cycleWallpaper = () => {
-    const index = WALLPAPERS.indexOf(settings.wallpaper)
-    setSettings({ wallpaper: WALLPAPERS[(index + 1) % WALLPAPERS.length] })
-  }
-
   return (
     <>
-      <div className="menu-backdrop" onPointerDown={onClose} role="presentation" />
-      <div className="ctx-menu" style={{ left, top }} role="menu" aria-label="Меню рабочего стола">
-        <div className="ctx-menu__head">РАБОЧИЙ СТОЛ / 04</div>
-        <button type="button" role="menuitem" onClick={() => run(() => openWindow('terminal'))}>
-          <Icon name="terminal" size={14} />
-          ОТКРЫТЬ ТЕРМИНАЛ
-          <span>01</span>
+      <div className="context-backdrop" onPointerDown={onClose} role="presentation" />
+      <div className="context-menu" style={{ left, top }} role="menu" aria-label="Desktop menu">
+        <div className="context-menu__head">Desktop</div>
+        <button
+          type="button"
+          role="menuitem"
+          onClick={() => run(() => openWindow('settings', { payload: { section: 'appearance' } }))}
+        >
+          <Icon name="settings" size={15} />
+          Change Background…
         </button>
-        <button type="button" role="menuitem" onClick={() => run(() => openWindow('files'))}>
-          <Icon name="files" size={14} />
-          ОТКРЫТЬ АРХИВ
-          <span>02</span>
+        <button
+          type="button"
+          role="menuitem"
+          onClick={() =>
+            run(() => notify('Display settings are managed by the system', 'info'))
+          }
+        >
+          <Icon name="crt" size={15} />
+          Display Settings
         </button>
-        <button type="button" role="menuitem" onClick={() => run(cycleWallpaper)}>
-          <Icon name="crt" size={14} />
-          СМЕНИТЬ ОБОИ
+        <button
+          type="button"
+          role="menuitem"
+          onClick={() => run(() => openWindow('settings'))}
+        >
+          <Icon name="settings" size={15} />
+          Settings
         </button>
-        <button type="button" role="menuitem" onClick={() => run(() => openWindow('about'))}>
-          <Icon name="about" size={14} />
-          О СИСТЕМЕ
-          <span>08</span>
-        </button>
-        <button type="button" role="menuitem" onClick={() => run(reboot)}>
-          <Icon name="reboot" size={14} />
-          ПЕРЕЗАГРУЗИТЬ
+        <button
+          type="button"
+          role="menuitem"
+          onClick={() => run(() => openWindow('about'))}
+        >
+          <Icon name="about" size={15} />
+          About Matrixx Linux
         </button>
       </div>
     </>

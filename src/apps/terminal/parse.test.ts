@@ -3,16 +3,16 @@ import { parseCommand, tokenize } from './parse'
 
 describe('terminal parser', () => {
   it('parses a command with arguments', () => {
-    expect(parseCommand('theme amber')).toEqual({
+    expect(parseCommand('theme dark')).toEqual({
       name: 'theme',
-      args: ['amber'],
-      raw: 'theme amber',
+      args: ['dark'],
+      raw: 'theme dark',
     })
   })
 
   it('keeps quoted arguments together', () => {
-    expect(tokenize('echo "привет мир"')).toEqual(['echo', 'привет мир'])
-    expect(tokenize("cd '/объект 09'")).toEqual(['cd', '/объект 09'])
+    expect(tokenize('echo "hello world"')).toEqual(['echo', 'hello world'])
+    expect(tokenize("cd '/opt/sector-09'")).toEqual(['cd', '/opt/sector-09'])
   })
 
   it('lowercases only the command name', () => {
@@ -29,6 +29,6 @@ describe('terminal parser', () => {
   })
 
   it('treats an unclosed quote as the rest of the input', () => {
-    expect(tokenize('echo "не закрыто')).toEqual(['echo', 'не закрыто'])
+    expect(tokenize('echo "not closed')).toEqual(['echo', 'not closed'])
   })
 })

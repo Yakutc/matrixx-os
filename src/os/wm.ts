@@ -1,6 +1,7 @@
 import type { Rect, WindowState } from './types'
 
-export const TASKBAR_H = 46
+export const TOPBAR_H = 32
+export const MOBILE_DOCK_H = 78
 export const MIN_WINDOW_W = 360
 export const MIN_WINDOW_H = 240
 export const MIN_VISIBLE = 140
@@ -23,7 +24,13 @@ export type WMAction =
   | { type: 'restore'; windows: WindowState[] }
 
 export function workspaceBounds(width: number, height: number): Rect {
-  return { x: 0, y: 0, w: Math.max(320, width), h: Math.max(280, height - TASKBAR_H) }
+  const mobile = width < 720
+  return {
+    x: 0,
+    y: 0,
+    w: Math.max(320, width),
+    h: Math.max(240, height - TOPBAR_H - (mobile ? MOBILE_DOCK_H : 0)),
+  }
 }
 
 export function clamp(value: number, min: number, max: number): number {
@@ -216,7 +223,7 @@ export function sanitizeWindows(
     out.push({
       id: win.id,
       appId: win.appId as WindowState['appId'],
-      title: typeof win.title === 'string' ? win.title.slice(0, 80) : 'ОКНО',
+      title: typeof win.title === 'string' ? win.title.slice(0, 80) : 'Window',
       rect: maximized ? { ...bounds } : clampRect(rect, bounds),
       z,
       minimized: win.minimized === true,

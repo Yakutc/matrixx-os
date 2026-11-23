@@ -18,6 +18,7 @@ function uptimeLabel(): string {
 export default function SystemApp(_props: AppProps) {
   const { windows, settings, triggerSignal, notify } = useOS()
   const now = useClock()
+  const [tab, setTab] = useState<'resources' | 'processes'>('resources')
   const [history, setHistory] = useState<number[]>(() =>
     Array.from({ length: 36 }, (_, index) => 24 + Math.sin(index / 2.4) * 9 + Math.random() * 8),
   )
@@ -44,9 +45,8 @@ export default function SystemApp(_props: AppProps) {
       if (value >= 100) {
         if (integrityTimer.current) window.clearInterval(integrityTimer.current)
         setIntegrity('done')
-        setHistory((current) => [...current])
         triggerSignal()
-        notify('ЦЕЛОСТНОСТЬ: 99.7% · ОДИН ФАЙЛ ИЗМЕНЁН ИЗВНЕ', 'danger')
+        notify('Integrity check: 99.7% — one file was modified externally', 'danger')
       }
     }, 130)
     return () => {
@@ -66,18 +66,18 @@ export default function SystemApp(_props: AppProps) {
     canvas.height = Math.floor(height * dpr)
     context.scale(dpr, dpr)
     const styles = getComputedStyle(document.documentElement)
-    const accent = styles.getPropertyValue('--accent').trim() || '#ffb347'
-    const line = styles.getPropertyValue('--line').trim() || '#233126'
+    const accent = styles.getPropertyValue('--accent').trim() || '#e95420'
+    const grid = styles.getPropertyValue('--border').trim() || 'rgba(255,255,255,.12)'
     context.clearRect(0, 0, width, height)
-    context.strokeStyle = line
+    context.strokeStyle = grid
     context.lineWidth = 1
-    for (let x = 0; x < width; x += 24) {
+    for (let x = 0; x < width; x += 28) {
       context.beginPath()
       context.moveTo(x + 0.5, 0)
       context.lineTo(x + 0.5, height)
       context.stroke()
     }
-    for (let y = 0; y < height; y += 16) {
+    for (let y = 0; y < height; y += 18) {
       context.beginPath()
       context.moveTo(0, y + 0.5)
       context.lineTo(width, y + 0.5)
@@ -91,143 +91,170 @@ export default function SystemApp(_props: AppProps) {
       else context.lineTo(x, y)
     })
     context.strokeStyle = accent
-    context.lineWidth = 1.5
+    context.lineWidth = 2
     context.stroke()
     context.lineTo(width, height)
     context.lineTo(0, height)
     context.closePath()
-    context.fillStyle = `${accent}18`
+    context.fillStyle = 'rgba(233, 84, 32, 0.18)'
     context.fill()
   }, [history, settings.theme])
 
   const cpu = history[history.length - 1] ?? 0
   const { hours, minutes, seconds } = timeParts(now)
   const processes = [
-    { pid: '004', name: 'wm-04', status: 'работает', load: '2%' },
-    { pid: '007', name: 'matrixx', status: 'работает', load: '6%' },
-    { pid: '012', name: 'crt', status: settings.crt ? 'работает' : 'остановлен', load: '1%' },
+    { pid: '1', name: 'systemd', status: 'Sleeping', load: '0%' },
+    { pid: '472', name: 'matrixx-receiver', status: 'Waiting', load: '0%' },
+    { pid: '612', name: 'gnome-shell', status: 'Running', load: '6%' },
+    { pid: '704', name: 'Xwayland', status: 'Running', load: '2%' },
+    { pid: '819', name: 'gdm', status: 'Sleeping', load: '0%' },
     ...windows.map((win, index) => ({
-      pid: String(100 + index).padStart(3, '0'),
-      name: APP_META[win.appId].short.toLowerCase(),
-      status: win.minimized ? 'свёрнут' : 'работает',
+      pid: String(900 + index),
+      name: APP_META[win.appId].short.toLowerCase().replace(/\s+/g, '-'),
+      status: win.minimized ? 'Sleeping' : 'Running',
       load: `${3 + index * 2}%`,
     })),
-    { pid: '047', name: 'signal', status: 'ожидание', load: '0%' },
+    { pid: '999', name: 'sector9-signal', status: 'Waiting', load: '0%' },
   ]
 
   return (
     <div className="system">
       <div className="system__head">
         <div>
-          <div className="system__kicker">ДИАГНОСТИКА / КОНТУР 04</div>
-          <div className="system__title">SYS / 05</div>
+          <div className="system__title">System Monitor</div>
+          <div className="system__subtitle">Matrixx Linux 24.04 LTS · Wayland</div>
         </div>
         <div className="system__clock">
           <b>
             {hours}:{minutes}:{seconds}
           </b>
-          <span>UPTIME {uptimeLabel()}</span>
+          <span>Uptime {uptimeLabel()}</span>
         </div>
       </div>
 
+      <div className="system__tabs" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'resources'}
+          className={tab === 'resources' ? 'is-active' : ''}
+          onClick={() => setTab('resources')}
+        >
+          Resources
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'processes'}
+          className={tab === 'processes' ? 'is-active' : ''}
+          onClick={() => setTab('processes')}
+        >
+          Processes
+        </button>
+      </div>
+
       <div className="system__scroll">
-        <div className="system__stats">
-          <div className="system__stat system__stat--wide">
-            <div className="system__stat-label">ЗАГРУЗКА CPU</div>
-            <div className="system__stat-value">
-              {Math.round(cpu)}
-              <span>%</span>
+        {tab === 'resources' ? (
+          <>
+            <div className="system__stats">
+              <div className="system__stat system__stat--wide">
+                <div className="system__stat-label">CPU Usage</div>
+                <div className="system__stat-value">
+                  {Math.round(cpu)}
+                  <span>%</span>
+                </div>
+                <canvas ref={canvasRef} className="system__chart" aria-label="CPU usage graph" />
+              </div>
+              <div className="system__stat">
+                <div className="system__stat-label">Memory</div>
+                <div className="system__stat-value">
+                  61<span>%</span>
+                </div>
+                <div className="system__bar">
+                  <span style={{ width: '61%' }} />
+                </div>
+                <div className="system__stat-foot">392 MiB / 640 MiB</div>
+              </div>
+              <div className="system__stat">
+                <div className="system__stat-label">Temperature</div>
+                <div className="system__stat-value">
+                  47.2<span>°C</span>
+                </div>
+                <div className="system__stat-foot">Thermal state normal</div>
+              </div>
+              <div className="system__stat">
+                <div className="system__stat-label">Signal</div>
+                <div className="system__stat-value system__stat-value--accent">
+                  47.2<span>Hz</span>
+                </div>
+                <div className="system__stat-foot">Awaiting response</div>
+              </div>
             </div>
-            <canvas ref={canvasRef} className="system__chart" aria-label="График загрузки CPU" />
-          </div>
-          <div className="system__stat">
-            <div className="system__stat-label">ПАМЯТЬ</div>
-            <div className="system__stat-value">
-              61<span>%</span>
-            </div>
-            <div className="system__bar">
-              <span style={{ width: '61%' }} />
-            </div>
-            <div className="system__stat-foot">392 / 640 КБ</div>
-          </div>
-          <div className="system__stat">
-            <div className="system__stat-label">ТЕМПЕРАТУРА</div>
-            <div className="system__stat-value">
-              47.2<span>°C</span>
-            </div>
-            <div className="system__stat-foot">КОНТУР СТАБИЛЕН</div>
-          </div>
-          <div className="system__stat">
-            <div className="system__stat-label">СИГНАЛ</div>
-            <div className="system__stat-value system__stat-value--live">
-              47.2<span>Гц</span>
-            </div>
-            <div className="system__stat-foot">ОЖИДАНИЕ ОТВЕТА</div>
-          </div>
-        </div>
 
-        <div className="system__section">
-          <div className="section-label">ПРОЦЕССЫ</div>
-          <div className="system__table">
-            <div className="system__tr system__tr--head">
-              <span>PID</span>
-              <span>ИМЯ</span>
-              <span>СТАТУС</span>
-              <span>CPU</span>
+            <div className="system__section">
+              <div className="system__section-title">File System Integrity</div>
+              <div className={`system__integrity system__integrity--${integrity}`}>
+                <div className="system__integrity-head">
+                  <div>
+                    <b>
+                      {integrity === 'idle'
+                        ? 'Check has not been run'
+                        : integrity === 'running'
+                          ? 'Verifying sectors…'
+                          : '99.7% — one file was modified externally'}
+                    </b>
+                    <span>
+                      {integrity === 'done'
+                        ? 'Recommendation: do not open .protocol'
+                        : 'Last check: 2026-11-24 04:04'}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => setIntegrity('running')}
+                    disabled={integrity === 'running'}
+                  >
+                    <Icon name="check" size={15} />
+                    {integrity === 'running' ? 'Checking…' : 'Check Integrity'}
+                  </button>
+                </div>
+                {(integrity === 'running' || integrity === 'done') && (
+                  <div className="system__bar system__bar--integrity">
+                    <span style={{ width: `${integrity === 'done' ? 100 : progress}%` }} />
+                  </div>
+                )}
+              </div>
             </div>
-            {processes.map((process) => (
-              <div className="system__tr" key={`${process.pid}-${process.name}`}>
-                <span className="muted">{process.pid}</span>
-                <span>{process.name}</span>
-                <span className={process.status === 'работает' ? 'live' : 'muted'}>
-                  {process.status}
-                </span>
-                <span className="muted">{process.load}</span>
+          </>
+        ) : (
+          <div className="system__section">
+            <div className="system__section-title">Processes</div>
+            <div className="system__table">
+              <div className="system__tr system__tr--head">
+                <span>PID</span>
+                <span>Name</span>
+                <span>Status</span>
+                <span>CPU</span>
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="system__section">
-          <div className="section-label">ЦЕЛОСТНОСТЬ КОНТУРА</div>
-          <div className={`system__integrity system__integrity--${integrity}`}>
-            <div className="system__integrity-head">
-              <div>
-                <b>
-                  {integrity === 'idle'
-                    ? 'ПРОВЕРКА НЕ ЗАПУЩЕНА'
-                    : integrity === 'running'
-                      ? 'СВЕРКА СЕКТОРОВ…'
-                      : '99.7% · ОДИН ФАЙЛ ИЗМЕНЁН ИЗВНЕ'}
-                </b>
-                <span>
-                  {integrity === 'done'
-                    ? 'рекомендуется не открывать .протокол'
-                    : 'последняя сверка: 04.11.1997 04:04'}
-                </span>
-              </div>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => setIntegrity('running')}
-                disabled={integrity === 'running'}
-              >
-                <Icon name="check" size={13} />
-                {integrity === 'running' ? 'СВЕРКА…' : 'ПРОВЕРИТЬ'}
-              </button>
+              {processes.map((process) => (
+                <div className="system__tr" key={`${process.pid}-${process.name}`}>
+                  <span className="muted">{process.pid}</span>
+                  <span>{process.name}</span>
+                  <span className={process.status === 'Running' ? 'live' : 'muted'}>
+                    {process.status}
+                  </span>
+                  <span className="muted">{process.load}</span>
+                </div>
+              ))}
             </div>
-            {(integrity === 'running' || integrity === 'done') && (
-              <div className="system__bar system__bar--integrity">
-                <span style={{ width: `${integrity === 'done' ? 100 : progress}%` }} />
-              </div>
-            )}
           </div>
-        </div>
+        )}
 
         <div className="system__footer">
-          <span>MATRIXX OS 0.9.7 · matrixx-0.9.7</span>
-          <span>НИИ-9 · СЕКТОР 4 · ТЕРМИНАЛ 04</span>
-          <span>ОБЪЕКТ 09: НЕТ ОТВЕТА</span>
+          <span>Matrixx Linux 24.04 LTS · 6.8.0-matrixx</span>
+          <span>GNOME 46 · Wayland</span>
+          <span>Sector 09: no response</span>
         </div>
       </div>
     </div>

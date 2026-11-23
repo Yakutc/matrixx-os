@@ -1,103 +1,150 @@
-:root {
-  --font-display: 'Handjet Variable', 'Handjet', 'IBM Plex Mono', monospace;
-  --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
-  --font-text: 'Golos Text', 'Trebuchet MS', sans-serif;
+:root,
+[data-theme='dark'] {
+  color-scheme: dark;
 
-  --taskbar-h: 46px;
+  --font-ui: 'Ubuntu', 'Cantarell', system-ui, sans-serif;
+  --font-display: 'Ubuntu', 'Cantarell', system-ui, sans-serif;
+  --font-mono: 'Ubuntu Mono', 'DejaVu Sans Mono', monospace;
+  --font-text: 'Ubuntu', 'Cantarell', system-ui, sans-serif;
+
+  --bg: #1e1e1e;
+  --surface: #242424;
+  --surface-raised: #2d2d2d;
+  --surface-sunken: #1a1a1a;
+  --sidebar: #262626;
+  --headerbar: #303030;
+  --headerbar-inactive: #2a2a2a;
+
+  --text: #ffffff;
+  --text-dim: #c6c6c6;
+  --text-muted: #9a9a9a;
+  --border: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.24);
+
+  --accent: #e95420;
+  --accent-hover: #ff6b35;
+  --accent-ink: #ffffff;
+  --blue: #3584e4;
+  --green: #2ec27e;
+  --red: #e01b24;
+  --yellow: #f6d32d;
+  --purple: #9141ac;
+  --selection: rgba(233, 84, 32, 0.38);
+
+  --topbar-bg: rgba(0, 0, 0, 0.84);
+  --topbar-fg: #ffffff;
+  --overlay: rgba(24, 12, 20, 0.55);
+  --popover: rgba(36, 36, 36, 0.96);
+  --hover: rgba(255, 255, 255, 0.08);
+  --active: rgba(255, 255, 255, 0.14);
+
+  --shadow-window: 0 12px 34px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.35);
+  --shadow-popover: 0 18px 48px rgba(0, 0, 0, 0.55);
+  --radius-window: 12px;
+  --radius-xl: 16px;
+  --radius: 8px;
+  --radius-sm: 6px;
+
+  --topbar-h: 32px;
+  --dock-w: 68px;
+  --dock-inset: 10px;
+  --mobile-dock-h: 78px;
+
   --dur-1: 120ms;
   --dur-2: 180ms;
-  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --shadow: rgba(0, 0, 0, 0.65);
-  --window-shadow: 6px 6px 0 var(--shadow);
+  --ease: cubic-bezier(0.25, 0.75, 0.25, 1);
 
   --z-windows: 100;
-  --z-taskbar: 5000;
-  --z-start: 6000;
-  --z-context: 6500;
-  --z-palette: 7000;
-  --z-toast: 8000;
-  --z-glitch: 8800;
-  --z-crt: 9000;
-  --z-boot: 9500;
+  --z-overview: 4500;
+  --z-dock: 4900;
+  --z-topbar: 5000;
+  --z-context: 5400;
+  --z-popover: 6500;
+  --z-notification: 7000;
+  --z-night: 8000;
+  --z-lock: 8500;
+  --z-boot: 9000;
 
-  color-scheme: dark;
+  --grid-line: rgba(255, 255, 255, 0.04);
+  --titlebar-bg: var(--headerbar);
+  --titlebar-fg: var(--text);
+  --text-strong: #ffffff;
+  --accent-wash: rgba(233, 84, 32, 0.16);
+  --live-wash: rgba(46, 194, 126, 0.14);
+  --danger-wash: rgba(224, 27, 36, 0.16);
 }
 
-:root,
-[data-theme='phosphor'] {
-  --bg: #050806;
-  --bg-2: #0a0f0b;
-  --panel: #0c120d;
-  --panel-2: #111a12;
-  --line: #233126;
-  --line-strong: #3a4a3c;
-  --text: #dfe9d8;
-  --text-dim: #9aa895;
-  --text-muted: #8b9987;
-  --accent: #ffb347;
-  --accent-ink: #1a1002;
-  --live: #b6ff5c;
-  --danger: #ff5540;
-  --info: #7fd4ff;
-  --titlebar-bg: #0a0f0b;
-  --titlebar-fg: #dfe9d8;
-  --accent-wash: rgba(255, 179, 71, 0.12);
-  --live-wash: rgba(182, 255, 92, 0.12);
-  --danger-wash: rgba(255, 85, 64, 0.14);
-  --grid-line: rgba(58, 74, 60, 0.24);
-  --grid-line-strong: rgba(58, 74, 60, 0.38);
-  --crt-opacity: 0.55;
-}
-
-[data-theme='amber'] {
-  --bg: #080604;
-  --bg-2: #0f0a05;
-  --panel: #100b06;
-  --panel-2: #171008;
-  --line: #3a2d1a;
-  --line-strong: #5a4526;
-  --text: #f4e7cf;
-  --text-dim: #c1ac8b;
-  --text-muted: #a89070;
-  --accent: #ff9e2c;
-  --accent-ink: #1b0e00;
-  --live: #ffd35c;
-  --danger: #ff5a3d;
-  --info: #ffcf91;
-  --titlebar-bg: #0f0a05;
-  --titlebar-fg: #f4e7cf;
-  --accent-wash: rgba(255, 158, 44, 0.13);
-  --live-wash: rgba(255, 211, 92, 0.12);
-  --danger-wash: rgba(255, 90, 61, 0.14);
-  --grid-line: rgba(90, 69, 38, 0.3);
-  --grid-line-strong: rgba(90, 69, 38, 0.48);
-  --crt-opacity: 0.5;
-}
-
-[data-theme='bone'] {
+[data-theme='light'] {
   color-scheme: light;
-  --bg: #e8e2d2;
-  --bg-2: #ded6c2;
-  --panel: #f2ecdc;
-  --panel-2: #e9e1cf;
-  --line: #b6ac93;
-  --line-strong: #8d826a;
-  --text: #14160f;
-  --text-dim: #4d5144;
-  --text-muted: #6f6c58;
-  --accent: #a83418;
-  --accent-ink: #f7f0df;
-  --live: #3f6b3a;
-  --danger: #a32318;
-  --info: #2d5b75;
-  --titlebar-bg: #171913;
-  --titlebar-fg: #efe8d6;
-  --accent-wash: rgba(181, 61, 29, 0.12);
-  --live-wash: rgba(63, 107, 58, 0.12);
-  --danger-wash: rgba(163, 35, 24, 0.12);
-  --grid-line: rgba(141, 130, 106, 0.34);
-  --grid-line-strong: rgba(141, 130, 106, 0.52);
-  --shadow: rgba(38, 31, 20, 0.28);
-  --window-shadow: 6px 6px 0 var(--shadow);
-  --crt-opacity: 0.28;
+
+  --bg: #f2f2f2;
+  --surface: #fafafa;
+  --surface-raised: #ffffff;
+  --surface-sunken: #ededed;
+  --sidebar: #f6f5f4;
+  --headerbar: #ebebeb;
+  --headerbar-inactive: #f0f0f0;
+
+  --text: #1d1d1d;
+  --text-dim: #3d3d3d;
+  --text-muted: #696969;
+  --border: rgba(0, 0, 0, 0.12);
+  --border-strong: rgba(0, 0, 0, 0.24);
+
+  --accent: #e95420;
+  --accent-hover: #c7431a;
+  --accent-ink: #ffffff;
+  --blue: #1c71d8;
+  --green: #26a269;
+  --red: #c01c28;
+  --yellow: #d5a700;
+  --purple: #813d9c;
+
+  --overlay: rgba(0, 0, 0, 0.3);
+  --popover: rgba(250, 250, 250, 0.98);
+  --hover: rgba(0, 0, 0, 0.06);
+  --active: rgba(0, 0, 0, 0.1);
+  --shadow-window: 0 10px 28px rgba(0, 0, 0, 0.22), 0 1px 3px rgba(0, 0, 0, 0.18);
+  --shadow-popover: 0 16px 40px rgba(0, 0, 0, 0.2);
+  --titlebar-bg: var(--headerbar);
+  --titlebar-fg: var(--text);
+  --grid-line: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme='hc'] {
+  color-scheme: dark;
+
+  --bg: #000000;
+  --surface: #000000;
+  --surface-raised: #101010;
+  --surface-sunken: #000000;
+  --sidebar: #000000;
+  --headerbar: #000000;
+  --headerbar-inactive: #000000;
+
+  --text: #ffffff;
+  --text-dim: #ffffff;
+  --text-muted: #d0d0d0;
+  --border: #ffffff;
+  --border-strong: #ffffff;
+
+  --accent: #ffd700;
+  --accent-hover: #ffe45c;
+  --accent-ink: #000000;
+  --blue: #4fc3ff;
+  --green: #6bff6b;
+  --red: #ff6b6b;
+  --yellow: #ffd700;
+  --purple: #d9a6ff;
+
+  --hover: rgba(255, 255, 255, 0.14);
+  --active: rgba(255, 255, 255, 0.24);
+  --overlay: rgba(0, 0, 0, 0.8);
+  --popover: #000000;
+  --shadow-window: none;
+  --shadow-popover: none;
+  --radius-window: 0px;
+  --radius-xl: 0px;
+  --radius: 0px;
+  --radius-sm: 0px;
 }

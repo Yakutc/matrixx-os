@@ -1,110 +1,103 @@
-# Деплой MATRIXX OS
+# Deploying Matrixx Linux
 
-Сборка полностью статическая и переносимая: `base: './'`, все шрифты и ассеты
-лежат внутри `dist/`.
+The build is fully static and portable: `base: './'`, all fonts and assets are bundled
+inside `dist/`, and no server-side configuration is required.
 
-## Вариант 1: GitHub Pages (бесплатно)
+## Option 1: GitHub Pages (free)
 
-1. Создайте публичный репозиторий, например `matrixx-os`:
+1. Create a public repository (for example `matrixx-os`):
 
    ```bash
    gh repo create matrixx-os --public --source=. --remote=origin --push
    ```
 
-   Если `gh` не настроен:
+   Without `gh`:
 
    ```bash
    git remote add origin https://github.com/<user>/matrixx-os.git
    git push -u origin main
    ```
 
-2. Соберите и опубликуйте ветку `gh-pages`:
+2. Build and publish the `gh-pages` branch:
 
    ```bash
    npm run build
    npm run deploy
    ```
 
-3. В GitHub откройте **Settings → Pages**:
+3. In GitHub open **Settings → Pages**:
    - Source: **Deploy from a branch**
    - Branch: **gh-pages**
    - Folder: **/ (root)**
 
-4. Через 1–2 минуты сайт будет доступен:
+4. The site becomes available at:
 
    ```
    https://<user>.github.io/matrixx-os/
    ```
 
-   Благодаря относительному `base` приложение работает и из подпапки, и с
-   кастомного домена без пересборки.
+   The relative `base` makes the same build work from a subpath, a custom domain,
+   or Cloudflare Pages.
 
-### Если страница пустая
+### Troubleshooting
 
-- Проверьте, что в `dist/index.html` пути начинаются с `./assets/`, а не `/assets/`.
-- Проверьте, что ветка `gh-pages` содержит `index.html` и `.nojekyll`.
-- `npm run deploy` публикует содержимое `dist/` в корень ветки `gh-pages`
-  (флаг `--nojekyll` включён в скрипт, поэтому `.nojekyll` тоже попадает в ветку).
-- В настройках Pages должен быть выбран именно `gh-pages`, а не `main`.
+- If the page is blank, check that `dist/index.html` references `./assets/…`
+  rather than `/assets/…`.
+- Check that the `gh-pages` branch contains `index.html` and `.nojekyll`.
+  The deploy script includes `--nojekyll`.
+- Pages must point to `gh-pages`, not `main`.
 
-## Вариант 2: Cloudflare Pages (резерв для РФ)
+## Option 2: Cloudflare Pages (good fallback)
 
-1. Запушьте репозиторий на GitHub.
-2. В Cloudflare Dashboard → **Workers & Pages → Create → Pages → Connect to Git**.
-3. Параметры сборки:
+1. Push the repository to GitHub.
+2. Cloudflare Dashboard → **Workers & Pages → Create → Pages → Connect to Git**.
+3. Build settings:
    - Framework preset: **None**
    - Build command: `npm run build`
    - Build output directory: `dist`
-   - Node version: 20 или новее
+   - Node version: 20 or newer
 4. Deploy.
 
-Cloudflare Pages обычно доступнее из РФ, чем GitHub Pages, и тоже бесплатен
-для статических проектов. Домен вида `matrixx-os.pages.dev` можно переслать
-друзьям.
+Cloudflare Pages is usually reachable from networks where GitHub Pages is slow, and
+is free for static projects. The domain looks like `matrixx-os.pages.dev`.
 
-## Вариант 3: любой статический хостинг
+## Option 3: Any static host
 
 ```bash
 npm run build
 ```
 
-Загрузите содержимое `dist/` на:
+Upload the contents of `dist/` to nginx, Apache, Vercel, Netlify, GitVerse Pages, or
+Yandex Cloud Object Storage. No environment variables or secrets are needed.
 
-- nginx / Apache;
-- Vercel / Netlify;
-- GitVerse Pages;
-- Yandex Cloud Object Storage (static website hosting).
+## Optional GitHub Actions deployment
 
-Никаких серверных переменных и секретов не требуется.
+The GitHub CLI token may lack the `workflow` scope. To deploy on every push to `main`:
 
-## Публикация через GitHub Actions (опционально)
-
-Токен GitHub CLI без scope `workflow` не сможет запушить YAML-файл workflow.
-Если нужен автодеплой при push в `main`:
-
-1. Выдайте себе scope:
+1. Grant the scope:
 
    ```bash
    gh auth refresh -s workflow
    ```
 
-2. Добавьте `.github/workflows/deploy.yml` с шагами:
+2. Add `.github/workflows/deploy.yml` with:
    `npm ci` → `npm run build` → `actions/upload-pages-artifact` (`dist`) →
    `actions/deploy-pages`.
-3. В **Settings → Pages** выберите Source: **GitHub Actions**.
+3. In **Settings → Pages** select Source: **GitHub Actions**.
 
-Для ручной публикации достаточно `npm run deploy`.
+For manual publishing, `npm run deploy` is enough.
 
-## Проверка после деплоя
+## Post-deploy verification
 
 ```bash
 curl -I https://<user>.github.io/matrixx-os/
 ```
 
-Ожидается `HTTP/2 200`, затем откройте сайт и проверьте:
+Expect `HTTP/2 200`. Then open the site and check:
 
-- BIOS и вход отображаются;
-- терминал открывается и выполняет `help`;
-- темы переключаются;
-- в консоли браузера нет ошибок;
-- на мобильном 390×844 нет горизонтального скролла.
+- GRUB and GDM are visible;
+- Terminal opens and `help` works;
+- Activities and the application grid open;
+- themes switch in Settings;
+- no console errors;
+- on 390×844 there is no horizontal overflow.

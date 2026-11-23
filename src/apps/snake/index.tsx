@@ -50,12 +50,11 @@ export default function SnakeApp({ windowId }: AppProps) {
   const bestRef = useRef(best)
   const touchRef = useRef<{ x: number; y: number } | null>(null)
   const colorsRef = useRef({
-    bg: '#0a0f0b',
-    panel: '#0c120d',
-    line: '#233126',
-    live: '#b6ff5c',
-    accent: '#ffb347',
-    danger: '#ff5540',
+    bg: '#1a1a1a',
+    line: 'rgba(255,255,255,0.08)',
+    green: '#2ec27e',
+    accent: '#e95420',
+    red: '#e01b24',
   })
 
   const startGame = useCallback(() => {
@@ -92,12 +91,11 @@ export default function SnakeApp({ windowId }: AppProps) {
   useEffect(() => {
     const styles = getComputedStyle(document.documentElement)
     colorsRef.current = {
-      bg: styles.getPropertyValue('--bg-2').trim() || '#0a0f0b',
-      panel: styles.getPropertyValue('--panel').trim() || '#0c120d',
-      line: styles.getPropertyValue('--line').trim() || '#233126',
-      live: styles.getPropertyValue('--live').trim() || '#b6ff5c',
-      accent: styles.getPropertyValue('--accent').trim() || '#ffb347',
-      danger: styles.getPropertyValue('--danger').trim() || '#ff5540',
+      bg: styles.getPropertyValue('--surface-sunken').trim() || '#1a1a1a',
+      line: styles.getPropertyValue('--border').trim() || 'rgba(255,255,255,0.08)',
+      green: styles.getPropertyValue('--green').trim() || '#2ec27e',
+      accent: styles.getPropertyValue('--accent').trim() || '#e95420',
+      red: styles.getPropertyValue('--red').trim() || '#e01b24',
     }
   }, [settings.theme])
 
@@ -125,41 +123,27 @@ export default function SnakeApp({ windowId }: AppProps) {
         }
       }
       const game = gameRef.current
-      const pulse = 0.68 + Math.sin(time / 220) * 0.28
+      const pulse = 0.7 + Math.sin(time / 240) * 0.25
       context.save()
       context.translate(game.food.x * CELL + CELL / 2, game.food.y * CELL + CELL / 2)
-      context.rotate(Math.PI / 4)
       context.fillStyle = colors.accent
       context.globalAlpha = pulse
-      const size = CELL * 0.56
-      context.fillRect(-size / 2, -size / 2, size, size)
+      context.beginPath()
+      context.arc(0, 0, CELL * 0.26, 0, Math.PI * 2)
+      context.fill()
       context.restore()
       game.snake.forEach((part, index) => {
         const head = index === 0
-        context.fillStyle = game.alive ? (head ? colors.accent : colors.live) : colors.danger
-        context.globalAlpha = head ? 1 : 0.86 - index * 0.012
-        context.fillRect(
-          part.x * CELL + 2,
-          part.y * CELL + 2,
-          CELL - 4,
-          CELL - 4,
-        )
+        context.fillStyle = game.alive ? (head ? colors.accent : colors.green) : colors.red
+        context.globalAlpha = head ? 1 : Math.max(0.4, 0.92 - index * 0.012)
+        context.beginPath()
+        const radius = head ? 7 : 6
+        const x = part.x * CELL + CELL / 2
+        const y = part.y * CELL + CELL / 2
+        context.roundRect(x - radius, y - radius, radius * 2, radius * 2, 5)
+        context.fill()
       })
       context.globalAlpha = 1
-      const head = game.snake[0]
-      if (head) {
-        context.fillStyle = colors.bg
-        const eye = 3
-        const offsetX = game.dir.x === 0 ? 5 : game.dir.x > 0 ? CELL - 7 : 3
-        const offsetY = game.dir.y === 0 ? 5 : game.dir.y > 0 ? CELL - 7 : 3
-        context.fillRect(head.x * CELL + offsetX, head.y * CELL + offsetY, eye, eye)
-        context.fillRect(
-          head.x * CELL + (game.dir.x === 0 ? CELL - 8 : offsetX),
-          head.y * CELL + (game.dir.y === 0 ? CELL - 8 : offsetY),
-          eye,
-          eye,
-        )
-      }
     }
 
     const tick = () => {
@@ -227,9 +211,7 @@ export default function SnakeApp({ windowId }: AppProps) {
       const direction = DIRECTIONS[key]
       if (!direction) return
       event.preventDefault()
-      if (statusRef.current === 'ready' || statusRef.current === 'over') {
-        startGame()
-      }
+      if (statusRef.current === 'ready' || statusRef.current === 'over') startGame()
       turn(direction)
     }
     window.addEventListener('keydown', onKey)
@@ -277,26 +259,26 @@ export default function SnakeApp({ windowId }: AppProps) {
     <div className="snake" data-status={status}>
       <div className="snake__head">
         <div className="snake__metric">
-          <span>СЧЁТ</span>
+          <span>Score</span>
           <b>{String(score).padStart(3, '0')}</b>
         </div>
         <div className="snake__metric">
-          <span>РЕКОРД</span>
+          <span>Best</span>
           <b>{String(best).padStart(3, '0')}</b>
         </div>
         <div className="snake__metric">
-          <span>СКОРОСТЬ</span>
+          <span>Speed</span>
           <b>{String(level).padStart(2, '0')}</b>
         </div>
         <div className="snake__status">
           <span className={status === 'playing' ? 'led' : 'led led--accent'} />
           {status === 'playing'
-            ? 'ПОТОК АКТИВЕН'
+            ? 'Running'
             : status === 'paused'
-              ? 'ПАУЗА'
+              ? 'Paused'
               : status === 'over'
-                ? 'СИГНАЛ ПОТЕРЯН'
-                : 'ОЖИДАНИЕ'}
+                ? 'Game over'
+                : 'Ready'}
         </div>
       </div>
 
@@ -306,49 +288,48 @@ export default function SnakeApp({ windowId }: AppProps) {
           className="snake__canvas"
           style={{ aspectRatio: `${WIDTH} / ${HEIGHT}` }}
           role="img"
-          aria-label="Игровое поле змейки"
+          aria-label="Snake game board"
         />
-        <div className="snake__scan" aria-hidden="true" />
         {status !== 'playing' && (
           <div className="snake__overlay">
             {status === 'ready' && (
               <>
-                <div className="snake__brand">ЗМЕЙ</div>
-                <div className="snake__sub">ПРОТОКОЛ 09 / ТРЕНИРОВКА КОНТУРА</div>
+                <div className="snake__brand">Snake</div>
+                <div className="snake__sub">Matrixx Linux · classic</div>
                 <p className="snake__text">
-                  Соберите сигнал. Не касайтесь стен и собственного следа. Каждые пять единиц
-                  скорость растёт.
+                  Collect the signal. Avoid the walls and your own trail. Every five points make
+                  the snake faster.
                 </p>
                 <button type="button" className="btn btn--solid snake__start" onClick={startGame}>
-                  <Icon name="play" size={13} />
-                  НАЧАТЬ
+                  <Icon name="play" size={14} />
+                  Start Game
                 </button>
               </>
             )}
             {status === 'paused' && (
               <>
-                <div className="snake__brand">ПАУЗА</div>
-                <div className="snake__sub">ПОТОК ПРИОСТАНОВЛЕН</div>
+                <div className="snake__brand">Paused</div>
+                <div className="snake__sub">The session is suspended</div>
                 <button type="button" className="btn btn--solid snake__start" onClick={togglePause}>
-                  <Icon name="play" size={13} />
-                  ПРОДОЛЖИТЬ
+                  <Icon name="play" size={14} />
+                  Resume
                 </button>
               </>
             )}
             {status === 'over' && (
               <>
-                <div className="snake__brand snake__brand--danger">СИГНАЛ ПОТЕРЯН</div>
+                <div className="snake__brand snake__brand--danger">Game Over</div>
                 <div className="snake__sub">
-                  СЧЁТ {String(score).padStart(3, '0')} · РЕКОРД {String(best).padStart(3, '0')}
+                  Score {String(score).padStart(3, '0')} · Best {String(best).padStart(3, '0')}
                 </div>
                 <p className="snake__text">
                   {score >= best && score > 0
-                    ? 'новый рекорд записан в контур.'
-                    : 'контур остывает. попробуйте ещё раз.'}
+                    ? 'A new record was written to the session.'
+                    : 'The session is still warm. Try again.'}
                 </p>
                 <button type="button" className="btn btn--solid snake__start" onClick={startGame}>
-                  <Icon name="reboot" size={13} />
-                  ЗАНОВО
+                  <Icon name="reboot" size={14} />
+                  Play Again
                 </button>
               </>
             )}
@@ -357,9 +338,9 @@ export default function SnakeApp({ windowId }: AppProps) {
       </div>
 
       <div className="snake__foot">
-        <span>СТРЕЛКИ / WASD — ДВИЖЕНИЕ</span>
-        <span>ПРОБЕЛ — ПАУЗА</span>
-        <span>R — ЗАНОВО</span>
+        <span>Arrows / WASD — move</span>
+        <span>Space — pause</span>
+        <span>R — restart</span>
       </div>
     </div>
   )
