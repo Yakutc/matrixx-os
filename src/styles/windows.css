@@ -1,0 +1,223 @@
+.win {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid var(--line-strong);
+  background: var(--panel);
+  box-shadow: var(--window-shadow);
+  animation: win-in var(--dur-2) var(--ease);
+  overflow: hidden;
+}
+
+.win.is-active {
+  border-color: var(--accent);
+}
+
+.win.is-maximized {
+  box-shadow: none;
+  animation: none;
+}
+
+.win.is-minimized {
+  display: none;
+}
+
+@keyframes win-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.win__bar {
+  flex: 0 0 30px;
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  height: 30px;
+  border-bottom: 1px solid var(--line-strong);
+  background: var(--titlebar-bg);
+  color: var(--titlebar-fg);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.win__bar:active {
+  cursor: grabbing;
+}
+
+.win.is-active .win__bar {
+  background: var(--titlebar-bg);
+}
+
+.win__index {
+  display: grid;
+  place-items: center;
+  min-width: 32px;
+  padding: 0 6px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.win:not(.is-active) .win__index {
+  background: var(--line);
+  color: var(--text-dim);
+}
+
+.win__title {
+  align-self: center;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--titlebar-fg);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.win:not(.is-active) .win__title {
+  color: color-mix(in srgb, var(--titlebar-fg) 58%, transparent);
+}
+
+.win__led {
+  align-self: center;
+  width: 5px;
+  height: 5px;
+  margin-left: -2px;
+  background: var(--live);
+  opacity: 0.9;
+}
+
+.win:not(.is-active) .win__led {
+  background: var(--text-muted);
+  box-shadow: none;
+}
+
+.win__meta {
+  align-self: center;
+  margin-left: auto;
+  padding: 0 8px;
+  color: var(--text-muted);
+  font-size: 8.5px;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.win__spacer {
+  flex: 1;
+}
+
+.win__controls {
+  display: flex;
+  align-items: stretch;
+}
+
+.win__ctl {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  border-left: 1px solid var(--line-strong);
+  color: color-mix(in srgb, var(--titlebar-fg) 70%, transparent);
+}
+
+.win__ctl:hover {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.win__ctl--close:hover {
+  background: var(--danger);
+  color: var(--bg);
+}
+
+.win__body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--panel);
+}
+
+.win__content {
+  height: 100%;
+  overflow: hidden;
+}
+
+.win__rz {
+  position: absolute;
+  z-index: 3;
+}
+
+.win__rz--se {
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+}
+
+.win__rz--e {
+  right: 0;
+  top: 30px;
+  bottom: 16px;
+  width: 6px;
+  cursor: ew-resize;
+}
+
+.win__rz--s {
+  left: 16px;
+  right: 16px;
+  bottom: 0;
+  height: 6px;
+  cursor: ns-resize;
+}
+
+.win__rz--se::after {
+  content: '';
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 7px;
+  height: 7px;
+  border-right: 1px solid var(--line-strong);
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.win.is-maximized .win__rz {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .win__rz {
+    display: none;
+  }
+
+  .win__bar {
+    flex-basis: 40px;
+    height: 40px;
+  }
+
+  .win__ctl {
+    width: 40px;
+  }
+
+  .win__meta {
+    display: none;
+  }
+
+  .win__title {
+    font-size: 10px;
+  }
+}

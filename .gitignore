@@ -3,6 +3,8 @@ dist/
 dist-ssr/
 *.local
 *.log
+.env
+.env.*
 .DS_Store
 Thumbs.db
 .opencode/
